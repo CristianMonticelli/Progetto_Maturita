@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Modifica slide</h2>
+
+  <form method="post" enctype="multipart/form-data" class="form-edit">
+    <div class="form-group">
+      <label for="title">Titolo slide</label>
+      <input type="text" id="title" name="title" value="{{ slide['title'] }}" required>
+    </div>
+    <div class="form-group">
+      <label for="content">Contenuto slide</label>
+      <textarea id="content" name="content" style="height:120px;">{{ slide['content'] }}</textarea>
+    </div>
+    <div class="form-group">
+      <label for="image">Immagine (opzionale)</label>
+      <div class="file-input-wrapper">
+        <span class="file-btn">Scegli foto</span>
+        <input type="file" id="image" name="image" accept="image/*" class="file-input">
+      </div>
+      {% if slide['image'] %}
+      <div class="current-image">
+        <p>Immagine attuale:</p>
+        <img src="{{ slide['image'] }}" alt="Current image" style="max-width: 200px; max-height: 150px; border-radius: 8px;">
+        <button type="submit" name="remove_image" value="1" class="btn btn-danger" style="margin-top:10px;">Rimuovi immagine</button>
+      </div>
+      {% endif %}
+    </div>
+    <div class="action-row">
+      <button type="submit" class="btn">Aggiorna</button>
+      <a href="{{ url_for('presentations.presentazione', id=slide['presentation_id']) }}" class="btn btn-secondary">Annulla</a>
+    </div>
+  </form>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="page-header-row">
+    <div>
+      <h2>Lista Presentazioni</h2>
+      <p>Apri una presentazione per aggiungere o riordinare le slide.</p>
+    </div>
+    <a href="{{ url_for('presentations.create_presentation') }}" class="btn">Crea nuova presentazione</a>
+  </div>
+
+  {% if lista_presentazioni %}
+    <div class="presentation-list">
+      {% for presentazione in lista_presentazioni %}
+        <article class="presentation-card">
+          <div class="presentation-card-body">
+            <h3><a href="{{ url_for('presentations.presentazione', id=presentazione['id']) }}">{{ presentazione['title'] }}</a></h3>
+            <p>{{ presentazione['description'] or 'Nessuna descrizione disponibile.' }}</p>
+          </div>
+          <div class="presentation-card-actions">
+            <a href="{{ url_for('presentations.presentazione', id=presentazione['id']) }}" class="btn btn-secondary">Apri</a>
+            <a href="{{ url_for('presentations.delete_presentation', presentation_id=presentazione['id']) }}" class="btn btn-danger" onclick="return confirm('Eliminare questa presentazione?');">Elimina</a>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="empty-state">Non ci sono presentazioni ancora.</p>
+  {% endif %}
+{% endblock %}
+
+ 

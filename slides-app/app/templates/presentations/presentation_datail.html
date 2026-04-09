@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Presentazione: {{ presentazione['title'] }}</h2>
+  <p>{{ presentazione['description'] }}</p>
+
+  <div class="ppt-container">
+    {% if slides %}
+      {% for slide in slides %}
+        <div class="slide-group">
+          <div class="ppt-slide">
+            <div class="slide-meta">
+              <span class="slide-number">Slide {{ loop.index }}</span>
+            </div>
+            <div class="slide-content-wrapper">
+              <div class="slide-text">
+                <div class="ppt-slide-title">{{ slide['title'] }}</div>
+                <div class="ppt-slide-content">{{ slide['content'] }}</div>
+              </div>
+              {% if slide['image'] %}
+              <div class="slide-image">
+                <img src="{{ slide['image'] }}" alt="Slide image" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="ppt-slide-controls">
+            <a href="{{ url_for('presentations.modifi_slide', slide_id=slide['id']) }}" class="btn btn-secondary">Modifica slide</a>
+            <a href="{{ url_for('presentations.move_slide_up', slide_id=slide['id']) }}" class="btn">↑ Sposta su</a>
+            <a href="{{ url_for('presentations.move_slide_down', slide_id=slide['id']) }}" class="btn">↓ Sposta giù</a>
+            <a href="{{ url_for('presentations.delete_slide', slide_id=slide['id']) }}" class="btn btn-danger" onclick="return confirm('Eliminare questa slide?');">Elimina slide</a>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p>Non ci sono slide ancora.</p>
+    {% endif %}
+  </div>
+
+  <hr />
+
+  <div class="form-section">
+    <h3>Aggiungi nuova slide</h3>
+    <form method="post" enctype="multipart/form-data">
+      <div class="form-group">
+        <label for="title">Titolo della Slide</label>
+        <input type="text" id="title" name="title" value="{{ request.form.title }}" required>
+      </div>
+      <div class="form-group">
+        <label for="content">Contenuto</label>
+        <textarea id="content" name="content" style="height:100px;">{{ request.form.content }}</textarea>
+      </div>
+      <div class="form-group">
+        <label for="image">Immagine (opzionale)</label>
+        <div class="file-input-wrapper">
+          <span class="file-btn">Scegli foto</span>
+          <input type="file" id="image" name="image" accept="image/*" class="file-input">
+        </div>
+      </div>
+      <button type="submit" class="btn">Salva Slide</button>
+      <a href="{{ url_for('presentations.presentazione', id=presentazione['id']) }}" class="btn btn-secondary" style="margin-left:10px;">Annulla</a>
+    </form>
+  </div>
+{% endblock %}
