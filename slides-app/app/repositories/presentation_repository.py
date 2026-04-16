@@ -8,10 +8,18 @@ def get_presentations():
     return [dict(row) for row in rows]
 
 
-def create_presentation(title, description):
+def get_presentations_by_author(author_id):
+    """Restituisce solo le presentazioni dell'autore specificato."""
     db = get_db()
-    query = 'INSERT INTO presentations (title, description) VALUES (?, ?)'
-    db.execute(query, (title, description))
+    query = 'SELECT * FROM presentations WHERE author_id = ? ORDER BY id'
+    rows = db.execute(query, (author_id,)).fetchall()
+    return [dict(row) for row in rows]
+
+
+def create_presentation(title, description, author_id):
+    db = get_db()
+    query = 'INSERT INTO presentations (title, description, author_id) VALUES (?, ?, ?)'
+    db.execute(query, (title, description, author_id))
     db.commit()
 
 def get_presentation_by_id(id):

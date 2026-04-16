@@ -1,9 +1,18 @@
+DROP TABLE IF EXISTS user;
+CREATE TABLE user (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL
+);
+
 DROP TABLE IF EXISTS presentations;
 CREATE TABLE presentations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     description TEXT,
-    created_at TEXT DEFAULT (datetime('now','localtime'))
+    author_id INTEGER NOT NULL,
+    created_at TEXT DEFAULT (datetime('now','localtime')),
+    FOREIGN KEY (author_id) REFERENCES user (id) ON DELETE CASCADE
 );
 
 DROP TABLE IF EXISTS slides;

@@ -77,6 +77,16 @@
         <div class="topbar">
           <a href="{{ url_for('presentations.list_presentations') }}">Presentazioni</a>
           <a href="{{ url_for('presentations.create_presentation') }}">Crea presentazione</a>
+          
+          {% if g.user %}
+            <!-- Utente loggato -->
+            <span style="color: #ffffff; font-weight: 600;">👤 {{ g.user['username'] }}</span>
+            <a href="{{ url_for('auth.logout') }}" style="background: #d63600; border-color: #ff6600;">Logout</a>
+          {% else %}
+            <!-- Utente non loggato -->
+            <a href="{{ url_for('auth.login') }}" style="background: #333333;">Login</a>
+            <a href="{{ url_for('auth.register') }}" style="background: #333333;">Registrati</a>
+          {% endif %}
         </div>
         <header>
           <h1>SlidesApp</h1>

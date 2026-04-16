@@ -1,7 +1,8 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, g
 from werkzeug.utils import secure_filename
 import os
 from app.repositories import presentation_repository, slide_repository
+from app.auth import login_required
 
 bp = Blueprint('presentations', __name__, url_prefix='/presentations')
 
@@ -16,12 +17,15 @@ def save_image(file):
     return None
 
 @bp.route('/')
+@login_required
 def list_presentations():
-    presentations = presentation_repository.get_presentations()
+    # Mostra solo le presentazioni dell'utente loggato
+    presentations = presentation_repository.get_presentations_by_author(g.user['id'])
     print(presentations)
     return render_template('presentations/index.html', lista_presentazioni=presentations)
 
 @bp.route('/create', methods=('GET', 'POST'))
+@login_required
 def create_presentation():
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
@@ -34,12 +38,14 @@ def create_presentation():
         if error is not None:
             flash(error)
         else:
-            presentation_repository.create_presentation(title, description)
+            # Passa l'ID dell'autore all'atto della creazione
+            presentation_repository.create_presentation(title, description, g.user['id'])
             return redirect(url_for('presentations.list_presentations'))
 
     return render_template('presentations/create.html')
 
 @bp.route('/presentazione/<id>', methods=('GET', 'POST'))
+@login_required
 def presentazione(id):
     presentazione = presentation_repository.get_presentation_by_id(id)
     slides = slide_repository.get_slides_by_presentation_id(id)
@@ -71,6 +77,7 @@ def presentazione(id):
 
 
 @bp.route('/slide/<slide_id>/modifica', methods=('GET', 'POST'))
+@login_required
 def modifi_slide(slide_id):
     slide = slide_repository.get_slide_by_id(slide_id)
     if not slide:
@@ -105,6 +112,7 @@ def modifi_slide(slide_id):
 
 
 @bp.route('/slide/<int:slide_id>/move_up')
+@login_required
 def move_slide_up(slide_id):
     slide = slide_repository.get_slide_by_id(slide_id)
     if slide:
@@ -117,6 +125,7 @@ def move_slide_up(slide_id):
 
 
 @bp.route('/slide/<int:slide_id>/move_down')
+@login_required
 def move_slide_down(slide_id):
     slide = slide_repository.get_slide_by_id(slide_id)
     if slide:
@@ -129,6 +138,7 @@ def move_slide_down(slide_id):
 
 
 @bp.route('/slide/<int:slide_id>/delete')
+@login_required
 def delete_slide(slide_id):
     slide = slide_repository.get_slide_by_id(slide_id)
     if slide:
@@ -140,6 +150,7 @@ def delete_slide(slide_id):
 
 
 @bp.route('/presentazione/<int:presentation_id>/delete')
+@login_required
 def delete_presentation(presentation_id):
     presentation = presentation_repository.get_presentation_by_id(presentation_id)
     if presentation:
