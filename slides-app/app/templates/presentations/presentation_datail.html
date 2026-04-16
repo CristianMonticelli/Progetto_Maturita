@@ -6,7 +6,7 @@
 
   <div class="form-section">
     <h3>Cambia colore sfondo a tutte le slide</h3>
-    <form method="post" action="{{ url_for('presentations.change_all_slides_bg_color', presentation_id=presentazione['id']) }}">
+    <form id="form-change-bg-color">
       <div class="form-group">
         <label for="bg_color_all">Colore sfondo globale</label>
         <input type="color" id="bg_color_all" name="bg_color_all" value="#ffffff" style="width:60px; height:60px; border-radius:8px; cursor:pointer; border:none; padding:0;">
@@ -17,32 +17,34 @@
 
   <div class="ppt-container">
     {% if slides %}
-      {% for slide in slides %}
-        <div class="slide-group">
-          <div class="ppt-slide" style="background: {{ slide['bg_color'] or '#ffffff' }};">
-            <div class="slide-meta">
-              <span class="slide-number">Slide {{ loop.index }}</span>
+      <div id="slides-container">
+        {% for slide in slides %}
+          <div class="slide-group" data-slide-id="{{ slide['id'] }}">
+            <div class="ppt-slide" style="background: {{ slide['bg_color'] or '#ffffff' }};">
+              <div class="slide-meta">
+                <span class="slide-number">Slide {{ loop.index }}</span>
+              </div>
+              <div class="slide-content-wrapper">
+                <div class="slide-text">
+                  <div class="ppt-slide-title">{{ slide['title'] }}</div>
+                  <div class="ppt-slide-content">{{ slide['content'] }}</div>
+                </div>
+                {% if slide['image'] %}
+                <div class="slide-image">
+                  <img src="{{ slide['image'] }}" alt="Slide image" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+                </div>
+                {% endif %}
+              </div>
             </div>
-            <div class="slide-content-wrapper">
-              <div class="slide-text">
-                <div class="ppt-slide-title">{{ slide['title'] }}</div>
-                <div class="ppt-slide-content">{{ slide['content'] }}</div>
-              </div>
-              {% if slide['image'] %}
-              <div class="slide-image">
-                <img src="{{ slide['image'] }}" alt="Slide image" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
-              </div>
-              {% endif %}
+            <div class="ppt-slide-controls">
+              <a href="{{ url_for('slides.modifica_slide', slide_id=slide['id']) }}" class="btn btn-secondary">Modifica slide</a>
+              <button class="btn move-slide-up" data-slide-id="{{ slide['id'] }}">↑ Sposta su</button>
+              <button class="btn move-slide-down" data-slide-id="{{ slide['id'] }}">↓ Sposta giù</button>
+              <button class="btn btn-danger delete-slide" data-slide-id="{{ slide['id'] }}">Elimina slide</button>
             </div>
           </div>
-          <div class="ppt-slide-controls">
-            <a href="{{ url_for('slides.modifica_slide', slide_id=slide['id']) }}" class="btn btn-secondary">Modifica slide</a>
-            <a href="{{ url_for('slides.move_slide_up', slide_id=slide['id']) }}" class="btn">↑ Sposta su</a>
-            <a href="{{ url_for('slides.move_slide_down', slide_id=slide['id']) }}" class="btn">↓ Sposta giù</a>
-            <a href="{{ url_for('slides.delete_slide', slide_id=slide['id']) }}" class="btn btn-danger" onclick="return confirm('Eliminare questa slide?');">Elimina slide</a>
-          </div>
-        </div>
-      {% endfor %}
+        {% endfor %}
+      </div>
     {% else %}
       <p>Non ci sono slide ancora.</p>
     {% endif %}
@@ -52,7 +54,7 @@
 
   <div class="form-section">
     <h3>Aggiungi nuova slide</h3>
-    <form method="post" enctype="multipart/form-data">
+    <form id="form-add-slide" enctype="multipart/form-data">
       <div class="form-group">
         <label for="title">Titolo della Slide</label>
         <input type="text" id="title" name="title" value="{{ request.form.title }}" required>
@@ -76,4 +78,127 @@
       <a href="{{ url_for('presentations.presentazione', id=presentazione['id']) }}" class="btn btn-secondary" style="margin-left:10px;">Annulla</a>
     </form>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const presentationId = {{ presentazione['id'] }};
+      const slidesContainer = document.getElementById('slides-container');
+
+      // Add slide form
+      document.getElementById('form-add-slide').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        try {
+          const result = await apiFetch(`/api/presentations/${presentationId}/slides`, {
+            method: 'POST',
+            body: formData
+          });
+          // Append new slide
+          const newSlideHtml = `
+            <div class="slide-group" data-slide-id="${result.slide.id}">
+              <div class="ppt-slide" style="background: ${result.slide.bg_color || '#ffffff'};">
+                <div class="slide-meta">
+                  <span class="slide-number">Slide ${slidesContainer.children.length + 1}</span>
+                </div>
+                <div class="slide-content-wrapper">
+                  <div class="slide-text">
+                    <div class="ppt-slide-title">${result.slide.title}</div>
+                    <div class="ppt-slide-content">${result.slide.content}</div>
+                  </div>
+                  ${result.slide.image ? `<div class="slide-image"><img src="${result.slide.image}" alt="Slide image" style="max-width: 100%; max-height: 200px; border-radius: 8px;"></div>` : ''}
+                </div>
+              </div>
+              <div class="ppt-slide-controls">
+                <a href="/slides/${result.slide.id}/modifica" class="btn btn-secondary">Modifica slide</a>
+                <button class="btn move-slide-up" data-slide-id="${result.slide.id}">↑ Sposta su</button>
+                <button class="btn move-slide-down" data-slide-id="${result.slide.id}">↓ Sposta giù</button>
+                <button class="btn btn-danger delete-slide" data-slide-id="${result.slide.id}">Elimina slide</button>
+              </div>
+            </div>
+          `;
+          slidesContainer.insertAdjacentHTML('beforeend', newSlideHtml);
+          e.target.reset();
+          showToast('Slide aggiunta!');
+        } catch (error) {
+          // Error shown by apiFetch
+        }
+      });
+
+      // Move up/down
+      slidesContainer.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('move-slide-up') || e.target.classList.contains('move-slide-down')) {
+          e.preventDefault();
+          const slideId = e.target.getAttribute('data-slide-id');
+          const endpoint = e.target.classList.contains('move-slide-up') ? 'move_up' : 'move_down';
+          try {
+            const result = await apiFetch(`/api/slides/${slideId}/${endpoint}`, { method: 'POST' });
+            // Re-render slides
+            slidesContainer.innerHTML = result.slides.map((slide, index) => `
+              <div class="slide-group" data-slide-id="${slide.id}">
+                <div class="ppt-slide" style="background: ${slide.bg_color || '#ffffff'};">
+                  <div class="slide-meta">
+                    <span class="slide-number">Slide ${index + 1}</span>
+                  </div>
+                  <div class="slide-content-wrapper">
+                    <div class="slide-text">
+                      <div class="ppt-slide-title">${slide.title}</div>
+                      <div class="ppt-slide-content">${slide.content}</div>
+                    </div>
+                    ${slide.image ? `<div class="slide-image"><img src="${slide.image}" alt="Slide image" style="max-width: 100%; max-height: 200px; border-radius: 8px;"></div>` : ''}
+                  </div>
+                </div>
+                <div class="ppt-slide-controls">
+                  <a href="/slides/${slide.id}/modifica" class="btn btn-secondary">Modifica slide</a>
+                  <button class="btn move-slide-up" data-slide-id="${slide.id}">↑ Sposta su</button>
+                  <button class="btn move-slide-down" data-slide-id="${slide.id}">↓ Sposta giù</button>
+                  <button class="btn btn-danger delete-slide" data-slide-id="${slide.id}">Elimina slide</button>
+                </div>
+              </div>
+            `).join('');
+            showToast('Slide spostata.');
+          } catch (error) {
+            // Error shown
+          }
+        }
+      });
+
+      // Delete slide
+      slidesContainer.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('delete-slide')) {
+          const slideId = e.target.getAttribute('data-slide-id');
+          if (confirm('Eliminare questa slide?')) {
+            try {
+              await apiFetch(`/api/slides/${slideId}`, { method: 'DELETE' });
+              const slideGroup = e.target.closest('.slide-group');
+              slideGroup.style.transition = 'opacity 0.5s';
+              slideGroup.style.opacity = '0';
+              setTimeout(() => slideGroup.remove(), 500);
+              showToast('Slide eliminata.');
+            } catch (error) {
+              // Error shown
+            }
+          }
+        }
+      });
+
+      // Change all bg color
+      document.getElementById('form-change-bg-color').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const bgColor = document.getElementById('bg_color_all').value;
+        try {
+          await apiFetch(`/api/presentations/${presentationId}/change_bg_color`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bg_color: bgColor })
+          });
+          document.querySelectorAll('.ppt-slide').forEach(slide => {
+            slide.style.background = bgColor;
+          });
+          showToast('Colore aggiornato a tutte le slide.');
+        } catch (error) {
+          // Error shown
+        }
+      });
+    });
+  </script>
 {% endblock %}

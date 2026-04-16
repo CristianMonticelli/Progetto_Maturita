@@ -13,7 +13,15 @@ def create_user(username, password_hash):
         return True
     except db.IntegrityError:
         # Errore: lo username esiste già
-        return False
+        raise ValueError(f"L'utente {username} è già registrato.")
+
+def authenticate_user(username, password):
+    """Autentica un utente."""
+    from werkzeug.security import check_password_hash
+    user = get_user_by_username(username)
+    if user and check_password_hash(user['password'], password):
+        return user
+    return None
 
 def get_user_by_username(username):
     """Cerca un utente per nome."""

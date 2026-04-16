@@ -11,8 +11,10 @@ def get_slides_by_presentation(presentation_id):
 def create_slide(presentation_id, title, content, position, image=None, bg_color='#ffffff'):
     db = get_db()
     query = 'INSERT INTO slides (presentation_id, title, content, position, image, bg_color) VALUES (?, ?, ?, ?, ?, ?)'
-    db.execute(query, (presentation_id, title, content, position, image, bg_color))
+    cursor = db.execute(query, (presentation_id, title, content, position, image, bg_color))
     db.commit()
+    slide_id = cursor.lastrowid
+    return get_slide_by_id(slide_id)
 
 def get_slides_by_presentation_id(presentation_id):
     db = get_db()
@@ -43,7 +45,7 @@ def update_slide(slide_id, title, content, position, image=None, bg_color='#ffff
     query = 'UPDATE slides SET title = ?, content = ?, position = ?, image = ?, bg_color = ? WHERE id = ?'
     db.execute(query, (title, content, position, image, bg_color, slide_id))
     db.commit()
-    return True
+    return get_slide_by_id(slide_id)
 
 
 def delete_slide(slide_id):

@@ -19,8 +19,10 @@ def get_presentations_by_author(author_id):
 def create_presentation(title, description, author_id):
     db = get_db()
     query = 'INSERT INTO presentations (title, description, author_id) VALUES (?, ?, ?)'
-    db.execute(query, (title, description, author_id))
+    cursor = db.execute(query, (title, description, author_id))
     db.commit()
+    presentation_id = cursor.lastrowid
+    return get_presentation_by_id(presentation_id)
 
 def get_presentation_by_id(id):
     db = get_db()

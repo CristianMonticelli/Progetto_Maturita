@@ -27,9 +27,10 @@ def create_app():
     from . import db
     db.init_app(app)
 
-    from .blueprints import presentations, slides
+    from .blueprints import presentations, slides, api
     app.register_blueprint(presentations.bp)
     app.register_blueprint(slides.bp)
+    app.register_blueprint(api.bp)
 
     from . import auth
     app.register_blueprint(auth.bp)

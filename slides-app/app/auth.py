@@ -55,13 +55,12 @@ def register():
             hashed_pwd = generate_password_hash(password)
             
             # Chiamiamo il Repository
-            success = user_repository.create_user(username, hashed_pwd)
-            
-            if success:
+            try:
+                user_repository.create_user(username, hashed_pwd)
                 flash('Registrazione riuscita! Ora puoi fare login.')
                 return redirect(url_for('auth.login'))
-            else:
-                error = f"L'utente {username} è già registrato."
+            except ValueError as e:
+                error = str(e)
         
         flash(error)
 
