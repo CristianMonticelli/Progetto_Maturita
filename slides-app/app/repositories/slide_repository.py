@@ -8,10 +8,10 @@ def get_slides_by_presentation(presentation_id):
     return [dict(row) for row in rows]
 
 
-def create_slide(presentation_id, title, content, position, image=None):
+def create_slide(presentation_id, title, content, position, image=None, bg_color='#ffffff'):
     db = get_db()
-    query = 'INSERT INTO slides (presentation_id, title, content, position, image) VALUES (?, ?, ?, ?, ?)'
-    db.execute(query, (presentation_id, title, content, position, image))
+    query = 'INSERT INTO slides (presentation_id, title, content, position, image, bg_color) VALUES (?, ?, ?, ?, ?, ?)'
+    db.execute(query, (presentation_id, title, content, position, image, bg_color))
     db.commit()
 
 def get_slides_by_presentation_id(presentation_id):
@@ -33,15 +33,15 @@ def get_slide_by_id(slide_id):
     return dict(row) if row else None
 
 
-def update_slide(slide_id, title, content, position, image=None):
+def update_slide(slide_id, title, content, position, image=None, bg_color='#ffffff'):
     try:
         slide_id = int(slide_id)
     except (TypeError, ValueError):
         return False
 
     db = get_db()
-    query = 'UPDATE slides SET title = ?, content = ?, position = ?, image = ? WHERE id = ?'
-    db.execute(query, (title, content, position, image, slide_id))
+    query = 'UPDATE slides SET title = ?, content = ?, position = ?, image = ?, bg_color = ? WHERE id = ?'
+    db.execute(query, (title, content, position, image, bg_color, slide_id))
     db.commit()
     return True
 
@@ -80,7 +80,7 @@ def move_slide_up(slide_id):
 
     slides[index], slides[index - 1] = slides[index - 1], slides[index]
     for i, s in enumerate(slides):
-        update_slide(s['id'], s['title'], s['content'], i + 1, s.get('image'))
+        update_slide(s['id'], s['title'], s['content'], i + 1, s.get('image'), s.get('bg_color', '#ffffff'))
     return True
 
 
@@ -106,5 +106,5 @@ def move_slide_down(slide_id):
 
     slides[index], slides[index + 1] = slides[index + 1], slides[index]
     for i, s in enumerate(slides):
-        update_slide(s['id'], s['title'], s['content'], i + 1, s.get('image'))
+        update_slide(s['id'], s['title'], s['content'], i + 1, s.get('image'), s.get('bg_color', '#ffffff'))
     return True

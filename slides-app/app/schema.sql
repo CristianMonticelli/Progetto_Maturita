@@ -23,6 +23,7 @@ CREATE TABLE slides (
     content TEXT,
     position INTEGER DEFAULT 0,
     image TEXT,
+    bg_color TEXT DEFAULT '#ffffff',
     FOREIGN KEY (presentation_id) REFERENCES presentations(id) ON DELETE CASCADE
 );
 

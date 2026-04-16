@@ -53,7 +53,7 @@ def presentazione(id):
     # Reorder positions to ensure they are 1,2,3,...
     for i, slide in enumerate(slides):
         slide_repository.update_slide(
-            slide['id'], slide['title'], slide['content'], i + 1, slide.get('image')
+            slide['id'], slide['title'], slide['content'], i + 1, slide.get('image'), slide.get('bg_color', '#ffffff')
         )
 
     if request.method == 'POST':
@@ -61,6 +61,7 @@ def presentazione(id):
         content = request.form.get('content', '').strip()
         image_file = request.files.get('image')
         image_path = save_image(image_file)
+        bg_color = request.form.get('bg_color', '#ffffff').strip()
 
         error = None
         if not title:
@@ -70,83 +71,29 @@ def presentazione(id):
             flash(error)
         else:
             position = len(slides) + 1
-            slide_repository.create_slide(id, title, content, position, image_path)
+            slide_repository.create_slide(id, title, content, position, image_path, bg_color)
             return redirect(url_for('presentations.presentazione', id=id))
 
     return render_template('presentations/presentation_datail.html', presentazione=presentazione, slides=slides)
 
 
-@bp.route('/slide/<slide_id>/modifica', methods=('GET', 'POST'))
+@bp.route('/presentazione/<int:presentation_id>/change_bg_color', methods=('POST',))
 @login_required
-def modifi_slide(slide_id):
-    slide = slide_repository.get_slide_by_id(slide_id)
-    if not slide:
-        flash('Slide non trovata.')
+def change_all_slides_bg_color(presentation_id):
+    presentazione = presentation_repository.get_presentation_by_id(presentation_id)
+    if not presentazione:
+        flash('Presentazione non trovata.')
         return redirect(url_for('presentations.list_presentations'))
 
-    if request.method == 'POST':
-        title = request.form.get('title', '').strip()
-        content = request.form.get('content', '').strip()
-        remove_image = request.form.get('remove_image')
-        image_file = request.files.get('image')
-        if remove_image:
-            image_path = None
-        else:
-            image_path = save_image(image_file) if image_file and image_file.filename else slide.get('image')
+    bg_color = request.form.get('bg_color_all', '#ffffff').strip()
+    slides = slide_repository.get_slides_by_presentation_id(presentation_id)
+    for slide in slides:
+        slide_repository.update_slide(
+            slide['id'], slide['title'], slide['content'], slide['position'], slide.get('image'), bg_color
+        )
 
-        error = None
-        if not title:
-            error = 'Il titolo della slide è obbligatorio.'
-
-        if error is not None:
-            flash(error)
-        else:
-            position = slide['position']
-            slide_repository.update_slide(slide_id, title, content, position, image_path)
-            if remove_image:
-                flash('Immagine rimossa.')
-                return redirect(url_for('presentations.modifi_slide', slide_id=slide_id))
-            return redirect(url_for('presentations.presentazione', id=slide['presentation_id']))
-
-    return render_template('presentations/edit_slide.html', slide=slide)
-
-
-@bp.route('/slide/<int:slide_id>/move_up')
-@login_required
-def move_slide_up(slide_id):
-    slide = slide_repository.get_slide_by_id(slide_id)
-    if slide:
-        if slide_repository.move_slide_up(slide_id):
-            flash('Slide spostata verso l\'alto.')
-        else:
-            flash('Impossibile spostare la slide verso l\'alto.')
-        return redirect(url_for('presentations.presentazione', id=slide['presentation_id']))
-    return redirect(url_for('presentations.list_presentations'))
-
-
-@bp.route('/slide/<int:slide_id>/move_down')
-@login_required
-def move_slide_down(slide_id):
-    slide = slide_repository.get_slide_by_id(slide_id)
-    if slide:
-        if slide_repository.move_slide_down(slide_id):
-            flash('Slide spostata verso il basso.')
-        else:
-            flash('Impossibile spostare la slide verso il basso.')
-        return redirect(url_for('presentations.presentazione', id=slide['presentation_id']))
-    return redirect(url_for('presentations.list_presentations'))
-
-
-@bp.route('/slide/<int:slide_id>/delete')
-@login_required
-def delete_slide(slide_id):
-    slide = slide_repository.get_slide_by_id(slide_id)
-    if slide:
-        slide_repository.delete_slide(slide_id)
-        flash('Slide eliminata.')
-        return redirect(url_for('presentations.presentazione', id=slide['presentation_id']))
-    flash('Slide non trovata.')
-    return redirect(url_for('presentations.list_presentations'))
+    flash('Colore sfondo aggiornato a tutte le slide.')
+    return redirect(url_for('presentations.presentazione', id=presentation_id))
 
 
 @bp.route('/presentazione/<int:presentation_id>/delete')
