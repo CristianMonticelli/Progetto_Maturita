@@ -200,33 +200,12 @@ classDiagram
         +string name
         +string layout
     }
-    class UserRepository {
-        +get_user_by_id(id)
-        +get_user_by_username(username)
-        +create_user(username, password)
-    }
-    class PresentationRepository {
-        +get_presentations_by_author(author_id)
-        +get_presentation_by_id(id)
-        +create_presentation(title, description, author_id)
-        +delete_presentation(id)
-    }
-    class SlideRepository {
-        +get_slides_by_presentation_id(presentation_id)
-        +get_slide_by_id(id)
-        +create_slide(presentation_id, title, content, position, image, bg_color)
-        +update_slide(id, title, content, position, image, bg_color)
-        +delete_slide(id)
-        +move_slide_up(id)
-        +move_slide_down(id)
-    }
+   
 
     User "1" -- "*" Presentation : possiede
     Presentation "1" -- "*" Slide : contiene
     Slide "*" -- "0..1" Template : usa
-    UserRepository ..> User : gestisce
-    PresentationRepository ..> Presentation : gestisce
-    SlideRepository ..> Slide : gestisce
+    
 ```
 
 ---
