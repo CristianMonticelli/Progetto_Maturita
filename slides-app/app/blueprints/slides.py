@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, g
+from flask_babel import _
 from werkzeug.utils import secure_filename
 import os
 from app.repositories import slide_repository
@@ -26,7 +27,7 @@ def index():
 def modifica_slide(slide_id):
     slide = slide_repository.get_slide_by_id(slide_id)
     if not slide:
-        flash('Slide non trovata.')
+        flash(_('Slide non trovata.'), 'error')
         return redirect(url_for('presentations.list_presentations'))
 
     if request.method == 'POST':
@@ -42,15 +43,15 @@ def modifica_slide(slide_id):
 
         error = None
         if not title:
-            error = 'Il titolo della slide è obbligatorio.'
+            error = _('Il titolo della slide è obbligatorio.')
 
         if error is not None:
-            flash(error)
+            flash(error, 'error')
         else:
             position = slide['position']
             slide_repository.update_slide(slide_id, title, content, position, image_path, bg_color)
             if remove_image:
-                flash('Immagine rimossa.')
+                flash(_('Immagine rimossa.'), 'success')
                 return redirect(url_for('slides.modifica_slide', slide_id=slide_id))
             return redirect(url_for('presentations.presentazione', id=slide['presentation_id']))
 
@@ -72,9 +73,9 @@ def move_slide_up(slide_id):
     slide = slide_repository.get_slide_by_id(slide_id)
     if slide:
         if slide_repository.move_slide_up(slide_id):
-            flash('Slide spostata verso l\'alto.')
+            flash(_('Slide spostata verso l\'alto.'), 'success')
         else:
-            flash('Impossibile spostare la slide verso l\'alto.')
+            flash(_('Impossibile spostare la slide verso l\'alto.'), 'error')
         return redirect(url_for('presentations.presentazione', id=slide['presentation_id']))
     return redirect(url_for('presentations.list_presentations'))
 
@@ -84,9 +85,9 @@ def move_slide_down(slide_id):
     slide = slide_repository.get_slide_by_id(slide_id)
     if slide:
         if slide_repository.move_slide_down(slide_id):
-            flash('Slide spostata verso il basso.')
+            flash(_('Slide spostata verso il basso.'), 'success')
         else:
-            flash('Impossibile spostare la slide verso il basso.')
+            flash(_('Impossibile spostare la slide verso il basso.'), 'error')
         return redirect(url_for('presentations.presentazione', id=slide['presentation_id']))
     return redirect(url_for('presentations.list_presentations'))
 
@@ -96,9 +97,9 @@ def delete_slide(slide_id):
     slide = slide_repository.get_slide_by_id(slide_id)
     if slide:
         slide_repository.delete_slide(slide_id)
-        flash('Slide eliminata.')
+        flash(_('Slide eliminata.'), 'success')
         return redirect(url_for('presentations.presentazione', id=slide['presentation_id']))
-    flash('Slide non trovata.')
+    flash(_('Slide non trovata.'), 'error')
     return redirect(url_for('presentations.list_presentations'))
 
 

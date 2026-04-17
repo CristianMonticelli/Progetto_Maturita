@@ -1,6 +1,7 @@
 import os
 import sqlite3
 from flask import Flask
+from flask_babel import Babel, _
 
 
 def create_app():
@@ -10,7 +11,16 @@ def create_app():
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'slides.sqlite'),
         UPLOAD_FOLDER=os.path.join(app.root_path, 'static', 'uploads'),
+        BABEL_DEFAULT_LOCALE='it',
+        BABEL_SUPPORTED_LOCALES=['it', 'en', 'es'],
     )
+
+    # Flask-Babel setup
+    babel = Babel()
+    def get_locale():
+        from flask import session
+        return session.get('lang', 'it')
+    babel.init_app(app, locale_selector=get_locale)
 
     # Assicurati che instance esista
     try:

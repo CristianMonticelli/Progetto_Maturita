@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify, g, current_app
+from flask_babel import _
 import os
 from werkzeug.utils import secure_filename
 from app.repositories import presentation_repository, slide_repository
@@ -30,7 +31,7 @@ def create_presentation():
     description = data.get('description', '').strip()
 
     if not title:
-        return jsonify({'ok': False, 'error': 'Il titolo è obbligatorio.'}), 400
+        return jsonify({'ok': False, 'error': _('Il titolo è obbligatorio.')}), 400
 
     presentation = presentation_repository.create_presentation(title, description, g.user['id'])
     return jsonify({'ok': True, 'presentation': presentation})
@@ -40,7 +41,7 @@ def create_presentation():
 def delete_presentation(presentation_id):
     presentation = presentation_repository.get_presentation_by_id(presentation_id)
     if not presentation or presentation['author_id'] != g.user['id']:
-        return jsonify({'ok': False, 'error': 'Presentazione non trovata.'}), 404
+        return jsonify({'ok': False, 'error': _('Presentazione non trovata.')}), 404
 
     presentation_repository.delete_presentation(presentation_id)
     return jsonify({'ok': True})
@@ -50,7 +51,7 @@ def delete_presentation(presentation_id):
 def get_slides(presentation_id):
     presentation = presentation_repository.get_presentation_by_id(presentation_id)
     if not presentation or presentation['author_id'] != g.user['id']:
-        return jsonify({'ok': False, 'error': 'Presentazione non trovata.'}), 404
+        return jsonify({'ok': False, 'error': _('Presentazione non trovata.')}), 404
 
     slides = slide_repository.get_slides_by_presentation_id(presentation_id)
     return jsonify({'slides': slides})

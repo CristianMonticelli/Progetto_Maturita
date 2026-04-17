@@ -4,11 +4,60 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SlidesApp</title>
+    <link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/flag-icons/7.2.3/css/flag-icons.min.css">
     <style>
       body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: linear-gradient(135deg, #000000, #333333); color: #ffffff; min-height: 100vh; }
       .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
       .card { background: rgba(255, 255, 255, 0.05); border-radius: 15px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); overflow: hidden; }
-      .topbar { background: #ff6600; padding: 15px 20px; display: flex; justify-content: center; align-items: center; gap: 20px; }
+      .topbar { background: #ff6600; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+            .lang-dropdown { position: relative; display: flex; align-items: center; }
+            .lang-btn {
+              background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.4);
+              border-radius: 8px; padding: 6px 10px; cursor: pointer;
+              display: flex; align-items: center; gap: 6px; color: #fff; font-weight: 600;
+              transition: background 0.2s;
+            }
+            .lang-btn:hover { background: rgba(255,255,255,0.28); }
+            .lang-menu {
+              display: none; position: absolute; top: calc(100% + 8px); right: 0;
+              background: #222; border: 1px solid rgba(255,102,0,0.5); border-radius: 10px;
+              overflow: hidden; min-width: 130px; z-index: 500;
+              box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            }
+            .lang-menu a {
+              display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+              color: #fff; text-decoration: none; font-weight: 500;
+              transition: background 0.15s; border: none;
+            }
+            .lang-menu a:hover { background: rgba(255,102,0,0.25); }
+            .lang-menu a.active { background: rgba(255,102,0,0.4); font-weight: 700; }
+            .lang-dropdown:hover .lang-menu { display: block; }
+            .fi { border-radius: 3px; width: 24px; height: 16px; }
+            .flash-container { margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
+            .flash-msg {
+              display: flex; align-items: center; gap: 12px;
+              padding: 14px 18px; border-radius: 10px; font-weight: 600;
+              box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+              animation: flashIn 0.35s ease, flashOut 0.5s ease 3.5s forwards;
+            }
+            .flash-msg.success {
+              background: linear-gradient(135deg, #1a7a3a, #25a550);
+              border-left: 5px solid #6dffa0; color: #fff;
+            }
+            .flash-msg.error {
+              background: linear-gradient(135deg, #8b1a1a, #cc2200);
+              border-left: 5px solid #ff6666; color: #fff;
+            }
+            .flash-icon { font-size: 1.3rem; flex-shrink: 0; }
+            @keyframes flashIn {
+              from { opacity: 0; transform: translateY(-10px); }
+              to   { opacity: 1; transform: translateY(0); }
+            }
+            @keyframes flashOut {
+              from { opacity: 1; transform: translateY(0); }
+              to   { opacity: 0; transform: translateY(-10px); }
+            }
       .topbar a { color: #ffffff; text-decoration: none; font-weight: 600; padding: 8px 16px; border-radius: 8px; border: 2px solid rgba(255, 255, 255, 0.3); transition: all 0.3s; }
       .topbar a:hover { background: rgba(255, 255, 255, 0.2); border-color: #ffffff; }
       header { padding: 30px 20px; text-align: center; background: rgba(0, 0, 0, 0.8); }
@@ -75,29 +124,65 @@
     <div class="container">
       <div class="card">
         <div class="topbar">
-          <a href="{{ url_for('presentations.list_presentations') }}">Presentazioni</a>
-          <a href="{{ url_for('presentations.create_presentation') }}">Crea presentazione</a>
-          
-          {% if g.user %}
-            <!-- Utente loggato -->
-            <span style="color: #ffffff; font-weight: 600;">👤 {{ g.user['username'] }}</span>
-            <button id="btn-logout" style="background: #d63600; border-color: #ff6600; color: #ffffff; text-decoration: none; font-weight: 600; padding: 8px 16px; border-radius: 8px; border: 2px solid rgba(255, 255, 255, 0.3); transition: all 0.3s; cursor: pointer;">Logout</button>
-          {% else %}
-            <!-- Utente non loggato -->
-            <button id="btn-login-nav" style="background: #333333; color: #ffffff; text-decoration: none; font-weight: 600; padding: 8px 16px; border-radius: 8px; border: 2px solid rgba(255, 255, 255, 0.3); transition: all 0.3s; cursor: pointer;">Login</button>
-            <button id="btn-register-nav" style="background: #333333; color: #ffffff; text-decoration: none; font-weight: 600; padding: 8px 16px; border-radius: 8px; border: 2px solid rgba(255, 255, 255, 0.3); transition: all 0.3s; cursor: pointer;">Registrati</button>
-          {% endif %}
+          <!-- LEFT: navigation links -->
+          <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+            <a href="{{ url_for('presentations.list_presentations') }}">{{ _('Presentazioni') }}</a>
+            <a href="{{ url_for('presentations.create_presentation') }}">{{ _('Crea presentazione') }}</a>
+            {% if g.user %}
+              <span style="color:#fff;font-weight:600;">👤 {{ g.user['username'] }}</span>
+              <button id="btn-logout" style="background:#d63600;border-color:#ff6600;color:#fff;
+                font-weight:600;padding:8px 16px;border-radius:8px;
+                border:2px solid rgba(255,255,255,0.3);cursor:pointer;">
+                {{ _('Logout') }}
+              </button>
+            {% else %}
+              <button id="btn-login-nav" style="background:#333;color:#fff;font-weight:600;
+                padding:8px 16px;border-radius:8px;border:2px solid rgba(255,255,255,0.3);cursor:pointer;">
+                {{ _('Login') }}
+              </button>
+              <button id="btn-register-nav" style="background:#333;color:#fff;font-weight:600;
+                padding:8px 16px;border-radius:8px;border:2px solid rgba(255,255,255,0.3);cursor:pointer;">
+                {{ _('Registrati') }}
+              </button>
+            {% endif %}
+          </div>
+          <!-- RIGHT: language dropdown -->
+          {% set current_lang = session.get('lang', 'it') %}
+          {% set flag_map = {'it': 'it', 'en': 'gb', 'es': 'es'} %}
+          <div class="lang-dropdown">
+            <button class="lang-btn" type="button">
+              <span class="fi fi-{{ flag_map[current_lang] }}"></span>
+              <span style="font-size:0.75rem;">▼</span>
+            </button>
+            <div class="lang-menu">
+              <a href="{{ url_for('presentations.set_lang', lang='it') }}"
+                 class="{{ 'active' if current_lang == 'it' else '' }}">
+                <span class="fi fi-it"></span> Italiano
+              </a>
+              <a href="{{ url_for('presentations.set_lang', lang='en') }}"
+                 class="{{ 'active' if current_lang == 'en' else '' }}">
+                <span class="fi fi-gb"></span> English
+              </a>
+              <a href="{{ url_for('presentations.set_lang', lang='es') }}"
+                 class="{{ 'active' if current_lang == 'es' else '' }}">
+                <span class="fi fi-es"></span> Español
+              </a>
+            </div>
+          </div>
         </div>
         <header>
           <h1>SlidesApp</h1>
-          <p class="header-description">Organizza le tue presentazioni in modo semplice, bello e moderno.</p>
+          <p class="header-description">{{ _('Organizza le tue presentazioni in modo semplice, bello e moderno.') }}</p>
         </header>
         <div class="content-wrap">
-          {% with messages = get_flashed_messages() %}
+          {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
-            <div class="error">
-              {% for msg in messages %}
-                <p>{{ msg }}</p>
+            <div class="flash-container">
+              {% for category, message in messages %}
+                <div class="flash-msg {{ category }}">
+                  <span class="flash-icon">{{ '✅' if category == 'success' else '❌' }}</span>
+                  <span>{{ message }}</span>
+                </div>
               {% endfor %}
             </div>
           {% endif %}

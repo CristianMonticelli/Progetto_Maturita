@@ -1,10 +1,18 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, g
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, g, session
+from flask_babel import _
 from werkzeug.utils import secure_filename
 import os
 from app.repositories import presentation_repository, slide_repository
 from app.auth import login_required
 
 bp = Blueprint('presentations', __name__, url_prefix='/presentations')
+
+# Language switch route
+@bp.route('/set_lang/<lang>')
+def set_lang(lang):
+    if lang in ['it', 'en', 'es']:
+        session['lang'] = lang
+    return redirect(request.referrer or url_for('presentations.list_presentations'))
 
 def save_image(file):
     if file and file.filename:
@@ -31,15 +39,17 @@ def create_presentation():
         title = request.form.get('title', '').strip()
         description = request.form.get('description', '').strip()
 
+
         error = None
         if not title:
-            error = 'Il titolo è obbligatorio.'
+            error = _('Il titolo è obbligatorio.')
 
         if error is not None:
-            flash(error)
+            flash(error, 'error')
         else:
             # Passa l'ID dell'autore all'atto della creazione
             presentation_repository.create_presentation(title, description, g.user['id'])
+            flash(_('Presentazione creata con successo.'), 'success')
             return redirect(url_for('presentations.list_presentations'))
 
     return render_template('presentations/create.html')
