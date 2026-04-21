@@ -136,14 +136,14 @@
                 {{ _('Logout') }}
               </button>
             {% else %}
-              <button id="btn-login-nav" style="background:#333;color:#fff;font-weight:600;
-                padding:8px 16px;border-radius:8px;border:2px solid rgba(255,255,255,0.3);cursor:pointer;">
+              <a href="{{ url_for('auth.login') }}" style="background:#333;color:#fff;font-weight:600;
+                padding:8px 16px;border-radius:8px;border:2px solid rgba(255,255,255,0.3);cursor:pointer;text-decoration:none;display:inline-block;">
                 {{ _('Login') }}
-              </button>
-              <button id="btn-register-nav" style="background:#333;color:#fff;font-weight:600;
-                padding:8px 16px;border-radius:8px;border:2px solid rgba(255,255,255,0.3);cursor:pointer;">
+              </a>
+              <a href="{{ url_for('auth.register') }}" style="background:#333;color:#fff;font-weight:600;
+                padding:8px 16px;border-radius:8px;border:2px solid rgba(255,255,255,0.3);cursor:pointer;text-decoration:none;display:inline-block;">
                 {{ _('Registrati') }}
-              </button>
+              </a>
             {% endif %}
           </div>
           <!-- RIGHT: language dropdown -->

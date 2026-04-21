@@ -8,7 +8,7 @@
     <h3>Cambia colore sfondo a tutte le slide</h3>
     <form id="form-change-bg-color">
       <div class="form-group">
-        <label for="bg_color_all">Colore sfondo globale</label>
+        <label for="bg_color_all">{{ _('Colore sfondo globale') }}</label>
         <input type="color" id="bg_color_all" name="bg_color_all" value="#ffffff" style="width:60px; height:60px; border-radius:8px; cursor:pointer; border:none; padding:0;">
       </div>
       <button type="submit" class="btn">Aggiorna tutte le slide</button>
@@ -53,28 +53,28 @@
   <hr />
 
   <div class="form-section">
-    <h3>Aggiungi nuova slide</h3>
+    <h3>{{ _('Aggiungi nuova slide') }}</h3>
     <form id="form-add-slide" enctype="multipart/form-data">
       <div class="form-group">
-        <label for="title">Titolo della Slide</label>
+        <label for="title">{{ _('Titolo della Slide') }}</label>
         <input type="text" id="title" name="title" value="{{ request.form.title }}" required>
       </div>
       <div class="form-group">
-        <label for="content">Contenuto</label>
+        <label for="content">{{ _('Contenuto') }}</label>
         <textarea id="content" name="content" style="height:100px;">{{ request.form.content }}</textarea>
       </div>
       <div class="form-group">
-        <label for="bg_color">Colore sfondo</label>
+        <label for="bg_color">{{ _('Colore sfondo') }}</label>
         <input type="color" id="bg_color" name="bg_color" value="#ffffff" style="width:60px; height:60px; border-radius:8px; cursor:pointer; border:none; padding:0;">
       </div>
       <div class="form-group">
-        <label for="image">Immagine (opzionale)</label>
+        <label for="image">{{ _('Immagine (opzionale)') }}</label>
         <div class="file-input-wrapper">
           <span class="file-btn">Scegli foto</span>
           <input type="file" id="image" name="image" accept="image/*" class="file-input">
         </div>
       </div>
-      <button type="submit" class="btn">Salva Slide</button>
+      <button type="submit" class="btn">{{ _('Salva Slide') }}</button>
       <a href="{{ url_for('presentations.presentazione', id=presentazione['id']) }}" class="btn btn-secondary" style="margin-left:10px;">Annulla</a>
     </form>
   </div>
@@ -118,7 +118,7 @@
           `;
           slidesContainer.insertAdjacentHTML('beforeend', newSlideHtml);
           e.target.reset();
-          showToast('Slide aggiunta!');
+          showToast('{{ _("Slide aggiunta!") }}');
         } catch (error) {
           // Error shown by apiFetch
         }
@@ -155,7 +155,7 @@
                 </div>
               </div>
             `).join('');
-            showToast('Slide spostata.');
+            showToast('{{ _("Slide spostata.") }}');
           } catch (error) {
             // Error shown
           }
@@ -166,14 +166,14 @@
       slidesContainer.addEventListener('click', async (e) => {
         if (e.target.classList.contains('delete-slide')) {
           const slideId = e.target.getAttribute('data-slide-id');
-          if (confirm('Eliminare questa slide?')) {
+          if (confirm('{{ _("Eliminare questa slide?") }}')) {
             try {
               await apiFetch(`/api/slides/${slideId}`, { method: 'DELETE' });
               const slideGroup = e.target.closest('.slide-group');
               slideGroup.style.transition = 'opacity 0.5s';
               slideGroup.style.opacity = '0';
               setTimeout(() => slideGroup.remove(), 500);
-              showToast('Slide eliminata.');
+              showToast('{{ _("Slide eliminata.") }}');
             } catch (error) {
               // Error shown
             }
@@ -194,7 +194,7 @@
           document.querySelectorAll('.ppt-slide').forEach(slide => {
             slide.style.background = bgColor;
           });
-          showToast('Colore aggiornato a tutte le slide.');
+          showToast('{{ _("Colore aggiornato a tutte le slide.") }}');
         } catch (error) {
           // Error shown
         }

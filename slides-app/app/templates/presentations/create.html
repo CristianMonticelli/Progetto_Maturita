@@ -2,22 +2,22 @@
 {% block content %}
   <div class="page-header-row">
     <div>
-      <h2>Crea Presentazione</h2>
-      <p>Compila i dati per creare una nuova presentazione.</p>
+      <h2>{{ _('Crea Presentazione') }}</h2>
+      <p>{{ _('Compila i dati per creare una nuova presentazione.') }}</p>
     </div>
   </div>
   <form method="post" class="form-edit">
     <div class="form-group">
-      <label for="title">Titolo</label>
+      <label for="title">{{ _('Titolo') }}</label>
       <input type="text" id="title" name="title" value="{{ request.form.title }}" required>
     </div>
     <div class="form-group">
-      <label for="description">Descrizione</label>
+      <label for="description">{{ _('Descrizione') }}</label>
       <textarea id="description" name="description">{{ request.form.description }}</textarea>
     </div>
     <div class="action-row">
-      <button type="submit" class="btn">Salva</button>
-      <a href="{{ url_for('presentations.list_presentations') }}" class="btn btn-secondary">Annulla</a>
+      <button type="submit" class="btn">{{ _('Salva') }}</button>
+      <a href="{{ url_for('presentations.list_presentations') }}" class="btn btn-secondary">{{ _('Annulla') }}</a>
     </div>
   </form>
 {% endblock %}

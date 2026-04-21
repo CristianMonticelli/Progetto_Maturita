@@ -1,6 +1,7 @@
 import os
 import sqlite3
 from flask import Flask
+from flask_mail import Mail
 from flask_babel import Babel, _
 
 
@@ -12,9 +13,19 @@ def create_app():
         DATABASE=os.path.join(app.instance_path, 'slides.sqlite'),
         UPLOAD_FOLDER=os.path.join(app.root_path, 'static', 'uploads'),
         BABEL_DEFAULT_LOCALE='it',
+        MAIL_SERVER='smtp.gmail.com',
+        MAIL_PORT=587,
+        MAIL_USE_TLS=True,
+        MAIL_USERNAME=os.environ.get('MAIL_USERNAME', ''),
+        MAIL_PASSWORD=os.environ.get('MAIL_PASSWORD', ''),
+        MAIL_DEFAULT_SENDER=os.environ.get('MAIL_USERNAME', 'noreply@slidesapp.local'),
         BABEL_SUPPORTED_LOCALES=['it', 'en', 'es'],
     )
 
+    mail = Mail()
+    mail.init_app(app)
+    app.extensions = getattr(app, 'extensions', {})
+    app.extensions['mail'] = mail
     # Flask-Babel setup
     babel = Babel()
     def get_locale():

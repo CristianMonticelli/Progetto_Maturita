@@ -5,45 +5,45 @@
 {% block content %}
 <div style="max-width: 500px; margin: 40px auto; padding: 0 20px;">
     <div class="form-edit">
-        <h2 style="text-align: center; color: #ff6600; margin-top: 0;">🔐 Login</h2>
-        <p style="text-align: center; color: #d9d9d9;">Accedi al tuo account</p>
+        <h2 style="text-align: center; color: #ff6600; margin-top: 0;">🔐 {{ _('Login') }}</h2>
+        <p style="text-align: center; color: #d9d9d9;">{{ _('Accedi al tuo account') }}</p>
         
         <form method="post" style="display: flex; flex-direction: column; gap: 15px;">
             <div class="form-group">
-                <label for="username">👤 Username</label>
+                <label for="username">👤 {{ _('Username') }}</label>
                 <input 
                     type="text"
                     name="username" 
                     id="username" 
                     required
-                    placeholder="Inserisci il tuo username"
+                    placeholder="{{ _('Inserisci il tuo username') }}"
                     autocomplete="username"
                 >
             </div>
             
             <div class="form-group">
-                <label for="password">🔐 Password</label>
+                <label for="password">🔐 {{ _('Password') }}</label>
                 <input 
                     type="password"
                     name="password" 
                     id="password" 
                     required
-                    placeholder="Inserisci la tua password"
+                    placeholder="{{ _('Inserisci la tua password') }}"
                     autocomplete="current-password"
                 >
             </div>
             
             <button type="submit" class="btn" style="width: 100%; font-size: 1.1rem; padding: 15px;">
-                Accedi
+                {{ _('Accedi') }}
             </button>
         </form>
         
         <hr style="margin: 20px 0; opacity: 0.3;">
         
         <p style="text-align: center; color: #d9d9d9;">
-            Non hai un account? 
+            {{ _('Non hai un account?') }} 
             <a href="{{ url_for('auth.register') }}" style="color: #ff6600; text-decoration: none; font-weight: 600;">
-                Registrati qui
+                {{ _('Registrati qui') }}
             </a>
         </p>
     </div>

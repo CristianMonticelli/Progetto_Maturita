@@ -1,3 +1,44 @@
+# MFA/OTP/Email support
+def update_mfa(user_id, mfa_enabled, mfa_secret=None):
+    """Enable or disable MFA for a user. mfa_enabled: 0=off, 1=TOTP, 2=email"""
+    db = get_db()
+    db.execute(
+        'UPDATE user SET mfa_enabled=?, mfa_secret=? WHERE id=?',
+        (mfa_enabled, mfa_secret, user_id)
+    )
+    db.commit()
+
+def update_email(user_id, email):
+    db = get_db()
+    db.execute('UPDATE user SET email=? WHERE id=?', (email, user_id))
+    db.commit()
+
+def save_otp_token(user_id, token, expires_at):
+    """Save a new OTP token, invalidating all previous ones for this user."""
+    db = get_db()
+    db.execute('DELETE FROM otp_tokens WHERE user_id=?', (user_id,))
+    db.execute(
+        'INSERT INTO otp_tokens (user_id, token, expires_at) VALUES (?,?,?)',
+        (user_id, token, expires_at)
+    )
+    db.commit()
+
+def get_valid_otp_token(user_id, token):
+    """Return the token row if it exists, is not used, and is not expired."""
+    from datetime import datetime
+    db = get_db()
+    row = db.execute(
+        'SELECT * FROM otp_tokens WHERE user_id=? AND token=? AND used=0',
+        (user_id, token)
+    ).fetchone()
+    if row and datetime.fromisoformat(row['expires_at']) > datetime.now():
+        return dict(row)
+    return None
+
+def mark_otp_used(token_id):
+    db = get_db()
+    db.execute('UPDATE otp_tokens SET used=1 WHERE id=?', (token_id,))
+    db.commit()
 # Importiamo la nostra funzione per prendere la connessione
 from app.db import get_db
 
