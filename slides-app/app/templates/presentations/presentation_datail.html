@@ -120,7 +120,9 @@
           e.target.reset();
           showToast('{{ _("Slide aggiunta!") }}');
         } catch (error) {
-          // Error shown by apiFetch
+          if (!error.shouldReload) {
+            console.error('Errore AJAX:', error);
+          }
         }
       });
 
@@ -130,7 +132,7 @@
           e.preventDefault();
           const slideId = e.target.getAttribute('data-slide-id');
           const endpoint = e.target.classList.contains('move-slide-up') ? 'move_up' : 'move_down';
-          try {
+            try {
             const result = await apiFetch(`/api/slides/${slideId}/${endpoint}`, { method: 'POST' });
             // Re-render slides
             slidesContainer.innerHTML = result.slides.map((slide, index) => `
@@ -157,7 +159,9 @@
             `).join('');
             showToast('{{ _("Slide spostata.") }}');
           } catch (error) {
-            // Error shown
+            if (!error.shouldReload) {
+              console.error('Errore AJAX:', error);
+            }
           }
         }
       });
@@ -175,7 +179,9 @@
               setTimeout(() => slideGroup.remove(), 500);
               showToast('{{ _("Slide eliminata.") }}');
             } catch (error) {
-              // Error shown
+              if (!error.shouldReload) {
+                console.error('Errore AJAX:', error);
+              }
             }
           }
         }
@@ -196,7 +202,9 @@
           });
           showToast('{{ _("Colore aggiornato a tutte le slide.") }}');
         } catch (error) {
-          // Error shown
+          if (!error.shouldReload) {
+            console.error('Errore AJAX:', error);
+          }
         }
       });
     });

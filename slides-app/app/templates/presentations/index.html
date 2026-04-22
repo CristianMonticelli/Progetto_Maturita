@@ -97,7 +97,9 @@
           form.reset();
           showToast('Presentazione creata!');
         } catch (error) {
-          // Error already shown by apiFetch
+          if (!error.shouldReload) {
+            console.error('Errore creazione presentazione:', error);
+          }
         }
       });
 
