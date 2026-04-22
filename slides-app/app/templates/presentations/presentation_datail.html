@@ -16,38 +16,36 @@
   </div>
 
   <div class="ppt-container">
-    {% if slides %}
-      <div id="slides-container">
-        {% for slide in slides %}
-          <div class="slide-group" data-slide-id="{{ slide['id'] }}">
-            <div class="ppt-slide" style="background: {{ slide['bg_color'] or '#ffffff' }};">
-                <div class="slide-meta">
-                <span class="slide-number">{{ _('Slide') }} {{ loop.index }}</span>
-              </div>
-              <div class="slide-content-wrapper">
-                <div class="slide-text">
-                  <div class="ppt-slide-title">{{ slide['title'] }}</div>
-                  <div class="ppt-slide-content">{{ slide['content'] }}</div>
-                </div>
-                {% if slide['image'] %}
-                <div class="slide-image">
-                  <img src="{{ slide['image'] }}" alt="Slide image" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
-                </div>
-                {% endif %}
-              </div>
+    <div id="slides-container">
+      {% for slide in slides %}
+        <div class="slide-group" data-slide-id="{{ slide['id'] }}">
+          <div class="ppt-slide" style="background: {{ slide['bg_color'] or '#ffffff' }};">
+              <div class="slide-meta">
+              <span class="slide-number">{{ _('Slide') }} {{ loop.index }}</span>
             </div>
-            <div class="ppt-slide-controls">
-              <a href="{{ url_for('slides.modifica_slide', slide_id=slide['id']) }}" class="btn btn-secondary">{{ _('Modifica slide') }}</a>
-              <button class="btn move-slide-up" data-slide-id="{{ slide['id'] }}">{{ _('↑ Sposta su') }}</button>
-              <button class="btn move-slide-down" data-slide-id="{{ slide['id'] }}">{{ _('↓ Sposta giù') }}</button>
-              <button class="btn btn-danger delete-slide" data-slide-id="{{ slide['id'] }}">{{ _('Elimina slide') }}</button>
+            <div class="slide-content-wrapper">
+              <div class="slide-text">
+                <div class="ppt-slide-title">{{ slide['title'] }}</div>
+                <div class="ppt-slide-content">{{ slide['content'] }}</div>
+              </div>
+              {% if slide['image'] %}
+              <div class="slide-image">
+                <img src="{{ slide['image'] }}" alt="Slide image" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+              </div>
+              {% endif %}
             </div>
           </div>
-        {% endfor %}
-      </div>
-    {% else %}
-      <p>{{ _('Non ci sono slide ancora.') }}</p>
-    {% endif %}
+          <div class="ppt-slide-controls">
+            <a href="{{ url_for('slides.modifica_slide', slide_id=slide['id']) }}" class="btn btn-secondary">{{ _('Modifica slide') }}</a>
+            <button class="btn move-slide-up" data-slide-id="{{ slide['id'] }}">{{ _('↑ Sposta su') }}</button>
+            <button class="btn move-slide-down" data-slide-id="{{ slide['id'] }}">{{ _('↓ Sposta giù') }}</button>
+            <button class="btn btn-danger delete-slide" data-slide-id="{{ slide['id'] }}">{{ _('Elimina slide') }}</button>
+          </div>
+        </div>
+      {% else %}
+        <p id="empty-slides-msg">{{ _('Non ci sono slide ancora.') }}</p>
+      {% endfor %}
+    </div>
   </div>
 
   <hr />
@@ -105,6 +103,11 @@
             method: 'POST',
             body: formData
           });
+
+          // Rimuovi eventuale messaggio "Non ci sono slide ancora."
+          const emptyMsg = document.getElementById('empty-slides-msg');
+          if (emptyMsg) emptyMsg.remove();
+
           // Append new slide
           const newSlideHtml = `
             <div class="slide-group" data-slide-id="${result.slide.id}">
