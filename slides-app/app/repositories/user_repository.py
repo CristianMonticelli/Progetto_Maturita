@@ -42,13 +42,13 @@ def mark_otp_used(token_id):
 # Importiamo la nostra funzione per prendere la connessione
 from app.db import get_db
 
-def create_user(username, password_hash):
+def create_user(username, password_hash, email=None):
     """Inserisce un nuovo utente."""
     db = get_db()
     try:
         db.execute(
-            "INSERT INTO user (username, password) VALUES (?, ?)",
-            (username, password_hash),
+            "INSERT INTO user (username, password, email) VALUES (?, ?, ?)",
+            (username, password_hash, email),
         )
         db.commit()  # Salviamo le modifiche
         return True
@@ -63,6 +63,14 @@ def authenticate_user(username, password):
     if user and check_password_hash(user['password'], password):
         return user
     return None
+
+def get_user_by_email(email):
+    """Restituisce un utente cercandolo per email."""
+    db = get_db()
+    user = db.execute(
+        "SELECT * FROM user WHERE email = ?", (email,)
+    ).fetchone()
+    return dict(user) if user else None
 
 def get_user_by_username(username):
     """Cerca un utente per nome."""

@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Hero area (if not logged in) -->
+{% if not g.user %}
+<div style="text-align:center; padding: 30px 0 20px 0;">
+    <h2 style="color:#ff6600; font-size:2rem; margin-bottom:10px;">
+        {{ _('Benvenuto su SlidesApp') }}
+    </h2>
+    <p style="color:#d9d9d9; font-size:1.1rem; margin-bottom:24px;">
+        {{ _('Crea e condividi le tue presentazioni digitali.') }}
+    </p>
+    <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+        <a href="{{ url_for('auth.login') }}" class="btn" style="font-size:1.05rem; padding:14px 28px;">
+            {{ _('Accedi') }}
+        </a>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-secondary" style="font-size:1.05rem; padding:14px 28px;">
+            {{ _('Registrati') }}
+        </a>
+    </div>
+</div>
+<hr>
+{% endif %}
+
+<!-- If logged in, show quick action buttons -->
+{% if g.user %}
+<div class="page-header-row" style="margin-bottom:24px;">
+    <h2 style="color:#ff6600; margin:0;">{{ _('Tutte le presentazioni') }}</h2>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a href="{{ url_for('presentations.list_presentations') }}" class="btn btn-secondary">
+            {{ _('Le mie presentazioni') }}
+        </a>
+        <a href="{{ url_for('presentations.create_presentation') }}" class="btn">
+            {{ _('Crea nuova') }}
+        </a>
+    </div>
+</div>
+{% else %}
+<h2 style="color:#ff6600; margin-bottom:20px;">{{ _('Tutte le presentazioni') }}</h2>
+{% endif %}
+
+<!-- Grid of all presentations (read-only, no delete button) -->
+{% if presentations %}
+<div class="presentation-list">
+    {% for p in presentations %}
+    <article class="presentation-card">
+        <div>
+            <h3>
+                <a href="{{ url_for('presentations.presentazione', id=p['id']) }}">
+                    {{ p['title'] }}
+                </a>
+            </h3>
+            <p>{{ p['description'] or _('Nessuna descrizione disponibile.') }}</p>
+            <p style="color:#aaa; font-size:0.85rem; margin-top:8px;">
+                👤 {{ p['author_username'] }}
+            </p>
+        </div>
+        <div class="presentation-card-actions">
+            <a href="{{ url_for('presentations.presentazione', id=p['id']) }}"
+               class="btn btn-secondary">{{ _('Apri') }}</a>
+        </div>
+    </article>
+    {% endfor %}
+</div>
+{% else %}
+<p class="empty-state">{{ _('Non ci sono presentazioni ancora.') }}</p>
+{% endif %}
+{% endblock %}

@@ -45,18 +45,21 @@ def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        email = request.form.get('email', '').strip() or None
         error = None
 
         if not username:
             error = _('Username obbligatorio.')
         elif not password:
             error = _('Password obbligatoria.')
+        elif email and '@' not in email:
+            error = _('Email non valida.')
 
         if error is None:
             # Hashiamo la password (MAI salvarla in chiaro!)
             hashed_pwd = generate_password_hash(password)
             try:
-                user_repository.create_user(username, hashed_pwd)
+                user_repository.create_user(username, hashed_pwd, email)
                 flash(_('Registrazione riuscita! Ora puoi fare login.'), 'success')
                 return redirect(url_for('auth.login'))
             except ValueError as e:
@@ -85,10 +88,14 @@ def login():
 
         if error is None:
             # 3. GESTIONE SESSIONE (Mettiamo il "braccialetto")
+            # Preserviamo la lingua prima di cancellare la sessione
+            lang = session.get('lang', 'it')
             # Puliamo eventuali vecchie sessioni
             session.clear()
             # Salviamo l'ID dell'utente nel cookie di sessione
             session['user_id'] = user['id']
+            # Ripristiniamo la lingua scelta
+            session['lang'] = lang
             
             # Ora il browser ricorderà chi siamo!
             flash(_('Benvenuto {username}!').format(username=user["username"]), 'success')
@@ -103,7 +110,11 @@ def login():
 @bp.route('/logout')
 def logout():
     # Per uscire, "tagliamo il braccialetto"
+    # Preserviamo la lingua prima di cancellare la sessione
+    lang = session.get('lang', 'it')
     session.clear()
+    # Ripristiniamo la lingua scelta
+    session['lang'] = lang
     flash(_('Logout effettuato. Arrivederci!'), 'success')
     return redirect(url_for('presentations.list_presentations'))
 

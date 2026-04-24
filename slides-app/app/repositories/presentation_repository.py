@@ -36,3 +36,14 @@ def delete_presentation(presentation_id):
     db.execute('DELETE FROM presentations WHERE id = ?', (presentation_id,))
     db.execute('DELETE FROM slides WHERE presentation_id = ?', (presentation_id,))
     db.commit()
+
+def get_all_presentations_with_author():
+    """Return all presentations from all users with their author username, ordered by newest first."""
+    db = get_db()
+    rows = db.execute(
+        '''SELECT p.*, u.username as author_username
+           FROM presentations p
+           JOIN user u ON p.author_id = u.id
+           ORDER BY p.created_at DESC'''
+    ).fetchall()
+    return [dict(row) for row in rows]

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="it">
+<html lang="{{ session.get('lang', 'it') }}">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -32,7 +32,7 @@
             }
             .lang-menu a:hover { background: rgba(255,102,0,0.25); }
             .lang-menu a.active { background: rgba(255,102,0,0.4); font-weight: 700; }
-            .lang-dropdown:hover .lang-menu { display: block; }
+            .lang-dropdown.open .lang-menu { display: block; }
             .fi { border-radius: 3px; width: 24px; height: 16px; }
             .flash-container { margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
             .flash-msg {
@@ -126,8 +126,13 @@
         <div class="topbar">
           <!-- LEFT: navigation links -->
           <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
-            <a href="{{ url_for('presentations.list_presentations') }}">{{ _('Presentazioni') }}</a>
-            <a href="{{ url_for('presentations.create_presentation') }}">{{ _('Crea presentazione') }}</a>
+            <a href="{{ url_for('main.index') }}">{{ _('Home') }}</a>
+            {% if g.user %}
+              <a href="{{ url_for('presentations.list_presentations') }}">{{ _('Le mie presentazioni') }}</a>
+              <a href="{{ url_for('presentations.create_presentation') }}">{{ _('Crea presentazione') }}</a>
+            {% else %}
+              <a href="{{ url_for('main.index') }}">{{ _('Presentazioni') }}</a>
+            {% endif %}
             {% if g.user %}
               <span style="color:#fff;font-weight:600;">👤 {{ g.user['username'] }}</span>
               <button id="btn-logout" style="background:#d63600;border-color:#ff6600;color:#fff;
@@ -232,6 +237,29 @@
         await apiFetch('/api/auth/logout', { method: 'POST' });
         window.location.href = '/auth/login';
       });
+
+      // Language dropdown toggle
+      const langDropdown = document.querySelector('.lang-dropdown');
+      const langBtn = document.querySelector('.lang-btn');
+
+      if (langBtn && langDropdown) {
+          langBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              langDropdown.classList.toggle('open');
+          });
+          // Close when clicking anywhere outside
+          document.addEventListener('click', (e) => {
+              if (!langDropdown.contains(e.target)) {
+                  langDropdown.classList.remove('open');
+              }
+          });
+          // Close when a language is selected
+          langDropdown.querySelectorAll('.lang-menu a').forEach(a => {
+              a.addEventListener('click', () => {
+                  langDropdown.classList.remove('open');
+              });
+          });
+      }
     </script>
   </body>
 </html>
