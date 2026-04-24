@@ -2,10 +2,10 @@
 {% block content %}
   <div class="page-header-row">
     <div>
-      <h2>Lista Presentazioni</h2>
-      <p>Apri una presentazione per aggiungere o riordinare le slide.</p>
+      <h2>{{ _('Lista Presentazioni') }}</h2>
+      <p>{{ _('Apri una presentazione per aggiungere o riordinare le slide.') }}</p>
     </div>
-    <button id="btn-create-presentation" class="btn">Crea nuova presentazione</button>
+    <button id="btn-create-presentation" class="btn">{{ _('Crea nuova presentazione') }}</button>
   </div>
 
   {% if lista_presentazioni %}
@@ -14,35 +14,35 @@
         <article class="presentation-card" data-presentation-id="{{ presentazione['id'] }}">
           <div class="presentation-card-body">
             <h3><a href="{{ url_for('presentations.presentazione', id=presentazione['id']) }}">{{ presentazione['title'] }}</a></h3>
-            <p>{{ presentazione['description'] or 'Nessuna descrizione disponibile.' }}</p>
+            <p>{{ presentazione['description'] or _('Nessuna descrizione disponibile.') }}</p>
           </div>
           <div class="presentation-card-actions">
-            <a href="{{ url_for('presentations.presentazione', id=presentazione['id']) }}" class="btn btn-secondary">Apri</a>
-            <button class="btn btn-danger delete-presentation">Elimina</button>
+            <a href="{{ url_for('presentations.presentazione', id=presentazione['id']) }}" class="btn btn-secondary">{{ _('Apri') }}</a>
+            <button class="btn btn-danger delete-presentation">{{ _('Elimina') }}</button>
           </div>
         </article>
       {% endfor %}
     </div>
   {% else %}
-    <p class="empty-state">Non ci sono presentazioni ancora.</p>
+    <p class="empty-state">{{ _('Non ci sono presentazioni ancora.') }}</p>
   {% endif %}
 
   <!-- Modal for creating presentation -->
   <div id="modal-create" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
     <div style="background: #fff; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; color: #000;">
-      <h3>Crea nuova presentazione</h3>
+  <h3>{{ _('Crea nuova presentazione') }}</h3>
       <form id="form-create-presentation">
         <div class="form-group">
-          <label for="title">Titolo</label>
+          <label for="title">{{ _('Titolo') }}</label>
           <input type="text" id="title" name="title" required>
         </div>
         <div class="form-group">
-          <label for="description">Descrizione</label>
+          <label for="description">{{ _('Descrizione') }}</label>
           <textarea id="description" name="description"></textarea>
         </div>
         <div class="action-row">
-          <button type="submit" class="btn">Salva</button>
-          <button type="button" id="btn-cancel-create" class="btn btn-secondary">Annulla</button>
+          <button type="submit" class="btn">{{ _('Salva') }}</button>
+          <button type="button" id="btn-cancel-create" class="btn btn-secondary">{{ _('Annulla') }}</button>
         </div>
       </form>
     </div>
@@ -50,6 +50,14 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      const t = {
+        apri:            '{{ _("Apri") }}',
+        elimina:         '{{ _("Elimina") }}',
+        nessunaDesc:     '{{ _("Nessuna descrizione disponibile.") }}',
+        presentazioneCreata: '{{ _("Presentazione creata!") }}',
+        presentazioneEliminata: '{{ _("Presentazione eliminata.") }}',
+        eliminareConferma: '{{ _("Eliminare questa presentazione?") }}',
+      };
       const modal = document.getElementById('modal-create');
       const btnCreate = document.getElementById('btn-create-presentation');
       const btnCancel = document.getElementById('btn-cancel-create');
@@ -85,19 +93,21 @@
           newCard.innerHTML = `
             <div class="presentation-card-body">
               <h3><a href="/presentations/presentazione/${result.presentation.id}">${result.presentation.title}</a></h3>
-              <p>${result.presentation.description || 'Nessuna descrizione disponibile.'}</p>
+              <p>${result.presentation.description || t.nessunaDesc}</p>
             </div>
             <div class="presentation-card-actions">
-              <a href="/presentations/presentazione/${result.presentation.id}" class="btn btn-secondary">Apri</a>
-              <button class="btn btn-danger delete-presentation">Elimina</button>
+              <a href="/presentations/presentazione/${result.presentation.id}" class="btn btn-secondary">${t.apri}</a>
+              <button class="btn btn-danger delete-presentation">${t.elimina}</button>
             </div>
           `;
           container.insertBefore(newCard, container.firstChild);
           modal.style.display = 'none';
           form.reset();
-          showToast('Presentazione creata!');
+          showToast(t.presentazioneCreata);
         } catch (error) {
-          // Error already shown by apiFetch
+          if (!error.shouldReload) {
+            console.error('Errore creazione presentazione:', error);
+          }
         }
       });
 
@@ -105,15 +115,17 @@
         if (e.target.classList.contains('delete-presentation')) {
           const card = e.target.closest('.presentation-card');
           const id = card.getAttribute('data-presentation-id');
-          if (confirm('Eliminare questa presentazione?')) {
+          if (confirm(t.eliminareConferma)) {
             try {
               await apiFetch(`/api/presentations/${id}`, { method: 'DELETE' });
               card.style.transition = 'opacity 0.5s';
               card.style.opacity = '0';
               setTimeout(() => card.remove(), 500);
-              showToast('Presentazione eliminata.');
+              showToast(t.presentazioneEliminata);
             } catch (error) {
-              // Error already shown
+              if (!error.shouldReload) {
+                console.error('Errore eliminazione presentazione:', error);
+              }
             }
           }
         }

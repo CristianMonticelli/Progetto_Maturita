@@ -20,6 +20,7 @@ def create_app():
         MAIL_PASSWORD=os.environ.get('MAIL_PASSWORD', ''),
         MAIL_DEFAULT_SENDER=os.environ.get('MAIL_USERNAME', 'noreply@slidesapp.local'),
         BABEL_SUPPORTED_LOCALES=['it', 'en', 'es'],
+        BABEL_TRANSLATION_DIRECTORIES='translations',
     )
 
     mail = Mail()

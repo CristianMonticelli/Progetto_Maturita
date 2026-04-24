@@ -108,7 +108,18 @@ python run.py
 
 ---
 
-## 📊 Struttura del database (ER Diagram)
+## �️ Sviluppo
+
+Dopo aver modificato i file di traduzione (.po) o i template con stringhe tradotte, ricompila i file .mo:
+
+```bash
+cd slides-app
+pybabel compile -d app/translations
+```
+
+---
+
+## �📊 Struttura del database (ER Diagram)
 
 ```mermaid
 erDiagram

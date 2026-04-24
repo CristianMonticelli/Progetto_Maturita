@@ -27,20 +27,20 @@
     <div class="form-group">
       <label for="image">{{ _('Immagine (opzionale)') }}</label>
       <div class="file-input-wrapper">
-        <span class="file-btn">Scegli foto</span>
+        <span class="file-btn">{{ _('Scegli foto') }}</span>
         <input type="file" id="image" name="image" accept="image/*" class="file-input">
       </div>
       {% if slide['image'] %}
       <div class="current-image">
         <p>{{ _('Immagine attuale:') }}</p>
-        <img src="{{ slide['image'] }}" alt="Current image" style="max-width: 200px; max-height: 150px; border-radius: 8px;">
-        <button type="button" id="btn-remove-image" class="btn btn-danger" style="margin-top:10px;">Rimuovi immagine</button>
+  <img src="{{ slide['image'] }}" alt="Current image" style="max-width: 200px; max-height: 150px; border-radius: 8px;">
+  <button type="button" id="btn-remove-image" class="btn btn-danger" style="margin-top:10px;">{{ _('Rimuovi immagine') }}</button>
       </div>
       {% endif %}
     </div>
     <div class="action-row">
-      <button type="submit" class="btn">Aggiorna</button>
-      <a href="{{ url_for('presentations.presentazione', id=slide['presentation_id']) }}" class="btn btn-secondary">Annulla</a>
+      <button type="submit" class="btn">{{ _('Aggiorna') }}</button>
+      <a href="{{ url_for('presentations.presentazione', id=slide['presentation_id']) }}" class="btn btn-secondary">{{ _('Annulla') }}</a>
     </div>
   </form>
 
@@ -63,7 +63,10 @@
             window.location.href = `/presentations/presentazione/${presentationId}`;
           }, 1000);
         } catch (error) {
-          // Error shown by apiFetch
+          if (!error.shouldReload) {
+            showToast('Errore nel salvataggio.', true);
+            console.error('Errore modifica slide:', error);
+          }
         }
       });
 
@@ -81,7 +84,10 @@
           document.querySelector('.current-image').remove();
           showToast('{{ _("Immagine rimossa.") }}');
         } catch (error) {
-          // Error shown
+          if (!error.shouldReload) {
+            showToast('Errore nel salvataggio.', true);
+            console.error('Errore modifica slide:', error);
+          }
         }
       });
     });

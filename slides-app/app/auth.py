@@ -19,6 +19,16 @@ def login_required(view):
     @wraps(view)
     def wrapped_view(**kwargs):
         if g.user is None:
+            # Detect AJAX/API request: check URL prefix or Accept/Content-Type header
+            if request.path.startswith('/api/') or \
+               request.headers.get('Content-Type') == 'application/json' or \
+               request.headers.get('Accept') == 'application/json':
+                from flask import jsonify
+                return jsonify({
+                    'ok': False,
+                    'error': _('Sessione scaduta. Effettua di nuovo il login.'),
+                    'redirect': url_for('auth.login')
+                }), 401
             flash(_('Devi effettuare il login prima.'), 'error')
             return redirect(url_for('auth.login'))
         return view(**kwargs)

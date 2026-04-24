@@ -6,18 +6,52 @@
       <p>{{ _('Compila i dati per creare una nuova presentazione.') }}</p>
     </div>
   </div>
-  <form method="post" class="form-edit">
+  <form id="form-create" class="form-edit">
     <div class="form-group">
       <label for="title">{{ _('Titolo') }}</label>
-      <input type="text" id="title" name="title" value="{{ request.form.title }}" required>
+      <input type="text" id="title" name="title" required>
     </div>
     <div class="form-group">
       <label for="description">{{ _('Descrizione') }}</label>
-      <textarea id="description" name="description">{{ request.form.description }}</textarea>
+      <textarea id="description" name="description"></textarea>
     </div>
     <div class="action-row">
-      <button type="submit" class="btn">{{ _('Salva') }}</button>
+      <button type="submit" class="btn" id="btn-submit">{{ _('Salva') }}</button>
       <a href="{{ url_for('presentations.list_presentations') }}" class="btn btn-secondary">{{ _('Annulla') }}</a>
     </div>
   </form>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('form-create');
+      const btnSubmit = document.getElementById('btn-submit');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = '...';
+
+        const data = {
+          title: document.getElementById('title').value.trim(),
+          description: document.getElementById('description').value.trim()
+        };
+
+        try {
+          const result = await apiFetch('/api/presentations/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          // Redirect diretto alla nuova presentazione, senza refresh della lista
+          window.location.href = `/presentations/presentazione/${result.presentation.id}`;
+        } catch (error) {
+          if (!error.shouldReload) {
+            console.error('Errore creazione presentazione:', error);
+          }
+          btnSubmit.disabled = false;
+          btnSubmit.textContent = '{{ _("Salva") }}';
+        }
+      });
+    });
+  </script>
 {% endblock %}

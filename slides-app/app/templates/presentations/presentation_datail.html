@@ -1,53 +1,51 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  <h2>Presentazione: {{ presentazione['title'] }}</h2>
+  <h2>{{ _('Presentazione:') }} {{ presentazione['title'] }}</h2>
   <p>{{ presentazione['description'] }}</p>
 
   <div class="form-section">
-    <h3>Cambia colore sfondo a tutte le slide</h3>
+  <h3>{{ _('Cambia colore sfondo a tutte le slide') }}</h3>
     <form id="form-change-bg-color">
       <div class="form-group">
         <label for="bg_color_all">{{ _('Colore sfondo globale') }}</label>
         <input type="color" id="bg_color_all" name="bg_color_all" value="#ffffff" style="width:60px; height:60px; border-radius:8px; cursor:pointer; border:none; padding:0;">
       </div>
-      <button type="submit" class="btn">Aggiorna tutte le slide</button>
+  <button type="submit" class="btn">{{ _('Aggiorna tutte le slide') }}</button>
     </form>
   </div>
 
   <div class="ppt-container">
-    {% if slides %}
-      <div id="slides-container">
-        {% for slide in slides %}
-          <div class="slide-group" data-slide-id="{{ slide['id'] }}">
-            <div class="ppt-slide" style="background: {{ slide['bg_color'] or '#ffffff' }};">
+    <div id="slides-container">
+      {% for slide in slides %}
+        <div class="slide-group" data-slide-id="{{ slide['id'] }}">
+          <div class="ppt-slide" style="background: {{ slide['bg_color'] or '#ffffff' }};">
               <div class="slide-meta">
-                <span class="slide-number">Slide {{ loop.index }}</span>
-              </div>
-              <div class="slide-content-wrapper">
-                <div class="slide-text">
-                  <div class="ppt-slide-title">{{ slide['title'] }}</div>
-                  <div class="ppt-slide-content">{{ slide['content'] }}</div>
-                </div>
-                {% if slide['image'] %}
-                <div class="slide-image">
-                  <img src="{{ slide['image'] }}" alt="Slide image" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
-                </div>
-                {% endif %}
-              </div>
+              <span class="slide-number">{{ _('Slide') }} {{ loop.index }}</span>
             </div>
-            <div class="ppt-slide-controls">
-              <a href="{{ url_for('slides.modifica_slide', slide_id=slide['id']) }}" class="btn btn-secondary">Modifica slide</a>
-              <button class="btn move-slide-up" data-slide-id="{{ slide['id'] }}">↑ Sposta su</button>
-              <button class="btn move-slide-down" data-slide-id="{{ slide['id'] }}">↓ Sposta giù</button>
-              <button class="btn btn-danger delete-slide" data-slide-id="{{ slide['id'] }}">Elimina slide</button>
+            <div class="slide-content-wrapper">
+              <div class="slide-text">
+                <div class="ppt-slide-title">{{ slide['title'] }}</div>
+                <div class="ppt-slide-content">{{ slide['content'] }}</div>
+              </div>
+              {% if slide['image'] %}
+              <div class="slide-image">
+                <img src="{{ slide['image'] }}" alt="Slide image" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+              </div>
+              {% endif %}
             </div>
           </div>
-        {% endfor %}
-      </div>
-    {% else %}
-      <p>Non ci sono slide ancora.</p>
-    {% endif %}
+          <div class="ppt-slide-controls">
+            <a href="{{ url_for('slides.modifica_slide', slide_id=slide['id']) }}" class="btn btn-secondary">{{ _('Modifica slide') }}</a>
+            <button class="btn move-slide-up" data-slide-id="{{ slide['id'] }}">{{ _('↑ Sposta su') }}</button>
+            <button class="btn move-slide-down" data-slide-id="{{ slide['id'] }}">{{ _('↓ Sposta giù') }}</button>
+            <button class="btn btn-danger delete-slide" data-slide-id="{{ slide['id'] }}">{{ _('Elimina slide') }}</button>
+          </div>
+        </div>
+      {% else %}
+        <p id="empty-slides-msg">{{ _('Non ci sono slide ancora.') }}</p>
+      {% endfor %}
+    </div>
   </div>
 
   <hr />
@@ -70,17 +68,29 @@
       <div class="form-group">
         <label for="image">{{ _('Immagine (opzionale)') }}</label>
         <div class="file-input-wrapper">
-          <span class="file-btn">Scegli foto</span>
+          <span class="file-btn">{{ _('Scegli foto') }}</span>
           <input type="file" id="image" name="image" accept="image/*" class="file-input">
         </div>
       </div>
       <button type="submit" class="btn">{{ _('Salva Slide') }}</button>
-      <a href="{{ url_for('presentations.presentazione', id=presentazione['id']) }}" class="btn btn-secondary" style="margin-left:10px;">Annulla</a>
+      <a href="{{ url_for('presentations.presentazione', id=presentazione['id']) }}" class="btn btn-secondary" style="margin-left:10px;">{{ _('Annulla') }}</a>
     </form>
   </div>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      // Traduzioni pre-renderizzate da Flask-Babel
+      const t = {
+        modificaSlide:   '{{ _("Modifica slide") }}',
+        slide:           '{{ _("Slide") }}',
+        spostaSu:        '{{ _("↑ Sposta su") }}',
+        spostaGiu:       '{{ _("↓ Sposta giù") }}',
+        eliminaSlide:    '{{ _("Elimina slide") }}',
+        nessunaDesc:     '{{ _("Nessuna descrizione disponibile.") }}',
+        apri:            '{{ _("Apri") }}',
+        elimina:         '{{ _("Elimina") }}',
+      };
+
       const presentationId = {{ presentazione['id'] }};
       const slidesContainer = document.getElementById('slides-container');
 
@@ -93,12 +103,17 @@
             method: 'POST',
             body: formData
           });
+
+          // Rimuovi eventuale messaggio "Non ci sono slide ancora."
+          const emptyMsg = document.getElementById('empty-slides-msg');
+          if (emptyMsg) emptyMsg.remove();
+
           // Append new slide
           const newSlideHtml = `
             <div class="slide-group" data-slide-id="${result.slide.id}">
               <div class="ppt-slide" style="background: ${result.slide.bg_color || '#ffffff'};">
                 <div class="slide-meta">
-                  <span class="slide-number">Slide ${slidesContainer.children.length + 1}</span>
+                  <span class="slide-number">${t.slide} ${slidesContainer.children.length + 1}</span>
                 </div>
                 <div class="slide-content-wrapper">
                   <div class="slide-text">
@@ -109,10 +124,10 @@
                 </div>
               </div>
               <div class="ppt-slide-controls">
-                <a href="/slides/${result.slide.id}/modifica" class="btn btn-secondary">Modifica slide</a>
-                <button class="btn move-slide-up" data-slide-id="${result.slide.id}">↑ Sposta su</button>
-                <button class="btn move-slide-down" data-slide-id="${result.slide.id}">↓ Sposta giù</button>
-                <button class="btn btn-danger delete-slide" data-slide-id="${result.slide.id}">Elimina slide</button>
+                <a href="/slides/${result.slide.id}/modifica" class="btn btn-secondary">${t.modificaSlide}</a>
+                <button class="btn move-slide-up" data-slide-id="${result.slide.id}">${t.spostaSu}</button>
+                <button class="btn move-slide-down" data-slide-id="${result.slide.id}">${t.spostaGiu}</button>
+                <button class="btn btn-danger delete-slide" data-slide-id="${result.slide.id}">${t.eliminaSlide}</button>
               </div>
             </div>
           `;
@@ -120,7 +135,9 @@
           e.target.reset();
           showToast('{{ _("Slide aggiunta!") }}');
         } catch (error) {
-          // Error shown by apiFetch
+          if (!error.shouldReload) {
+            console.error('Errore AJAX:', error);
+          }
         }
       });
 
@@ -130,14 +147,14 @@
           e.preventDefault();
           const slideId = e.target.getAttribute('data-slide-id');
           const endpoint = e.target.classList.contains('move-slide-up') ? 'move_up' : 'move_down';
-          try {
+            try {
             const result = await apiFetch(`/api/slides/${slideId}/${endpoint}`, { method: 'POST' });
             // Re-render slides
             slidesContainer.innerHTML = result.slides.map((slide, index) => `
               <div class="slide-group" data-slide-id="${slide.id}">
                 <div class="ppt-slide" style="background: ${slide.bg_color || '#ffffff'};">
                   <div class="slide-meta">
-                    <span class="slide-number">Slide ${index + 1}</span>
+                    <span class="slide-number">${t.slide} ${index + 1}</span>
                   </div>
                   <div class="slide-content-wrapper">
                     <div class="slide-text">
@@ -148,16 +165,18 @@
                   </div>
                 </div>
                 <div class="ppt-slide-controls">
-                  <a href="/slides/${slide.id}/modifica" class="btn btn-secondary">Modifica slide</a>
-                  <button class="btn move-slide-up" data-slide-id="${slide.id}">↑ Sposta su</button>
-                  <button class="btn move-slide-down" data-slide-id="${slide.id}">↓ Sposta giù</button>
-                  <button class="btn btn-danger delete-slide" data-slide-id="${slide.id}">Elimina slide</button>
+                  <a href="/slides/${slide.id}/modifica" class="btn btn-secondary">${t.modificaSlide}</a>
+                  <button class="btn move-slide-up" data-slide-id="${slide.id}">${t.spostaSu}</button>
+                  <button class="btn move-slide-down" data-slide-id="${slide.id}">${t.spostaGiu}</button>
+                  <button class="btn btn-danger delete-slide" data-slide-id="${slide.id}">${t.eliminaSlide}</button>
                 </div>
               </div>
             `).join('');
             showToast('{{ _("Slide spostata.") }}');
           } catch (error) {
-            // Error shown
+            if (!error.shouldReload) {
+              console.error('Errore AJAX:', error);
+            }
           }
         }
       });
@@ -175,7 +194,9 @@
               setTimeout(() => slideGroup.remove(), 500);
               showToast('{{ _("Slide eliminata.") }}');
             } catch (error) {
-              // Error shown
+              if (!error.shouldReload) {
+                console.error('Errore AJAX:', error);
+              }
             }
           }
         }
@@ -196,7 +217,9 @@
           });
           showToast('{{ _("Colore aggiornato a tutte le slide.") }}');
         } catch (error) {
-          // Error shown
+          if (!error.shouldReload) {
+            console.error('Errore AJAX:', error);
+          }
         }
       });
     });

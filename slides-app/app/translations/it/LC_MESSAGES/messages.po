@@ -1,3 +1,10 @@
+# SlidesApp translations
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: it\n"
+
 msgid "Organizza le tue presentazioni in modo semplice, bello e moderno."
 msgstr "Organizza le tue presentazioni in modo semplice, bello e moderno."
 msgid "Presentazioni"
