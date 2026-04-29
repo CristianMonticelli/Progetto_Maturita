@@ -229,7 +229,7 @@ classDiagram
 
 ### 9.3 Diagramma dei casi d'uso
 
-Il diagramma dei casi d'uso può essere generato con PlantUML o Mermaid; per chiarezza, si può creare un file `diagrams/use_cases.png` o `use_cases.puml` da includere nella consegna.
+Vedi [casi.md](../casi.md) per il diagramma dei casi d'uso aggiornato (PlantUML + Mermaid), ricreato dalla screenshot fornita.
 
 ## 10. Pianificazione e milestone
 

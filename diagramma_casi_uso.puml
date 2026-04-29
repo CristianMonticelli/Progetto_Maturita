@@ -1,0 +1,25 @@
+@startuml casi_uso_slidesapp
+left to right direction
+actor Visitatore
+actor Utente
+Visitatore <|-- Utente
+
+Visitatore --> (Visualizza elenco presentazioni)
+Visitatore --> (Visualizza presentazione)
+
+Utente --> (Registrazione utente)
+Utente --> (Login)
+Utente --> (Logout)
+Utente --> (Crea presentazione)
+Utente --> (Aggiungi slide)
+Utente --> (Modifica slide)
+
+(Crea presentazione) .> (Verifica autenticazione) : <<include>>
+(Aggiungi slide) .> (Verifica autenticazione) : <<include>>
+(Modifica slide) .> (Verifica autenticazione) : <<include>>
+
+(Logout) .> (Login) : <<extend>>
+(Modifica slide) .> (Upload immagine) : <<extend>>
+(Aggiungi slide) .> (Visualizza presentazione) : <<extend>>
+@enduml
+
