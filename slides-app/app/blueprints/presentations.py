@@ -106,6 +106,17 @@ def change_all_slides_bg_color(presentation_id):
     return redirect(url_for('presentations.presentazione', id=presentation_id))
 
 
+@bp.route('/presentazione/<int:presentation_id>/presenta')
+@login_required
+def presenta(presentation_id):
+    presentation = presentation_repository.get_presentation_by_id(presentation_id)
+    if not presentation:
+        flash(_('Presentazione non trovata.'), 'error')
+        return redirect(url_for('presentations.list_presentations'))
+    
+    slides = slide_repository.get_slides_by_presentation(presentation_id)
+    return render_template('presentations/presenta.html', presentation=presentation, slides=slides)
+
 @bp.route('/presentazione/<int:presentation_id>/delete')
 @login_required
 def delete_presentation(presentation_id):

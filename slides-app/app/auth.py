@@ -55,15 +55,17 @@ def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        email = request.form.get('email', '').strip() or None
+        email = request.form['email'].strip()
         error = None
 
         if not username:
             error = _('Username obbligatorio.')
         elif not password:
             error = _('Password obbligatoria.')
-        elif email and '@' not in email:
-            error = _('Email non valida.')
+        elif not email:
+            error = _('Email obbligatoria.')
+        elif '@' not in email or '.' not in email:
+            error = _('Inserisci un indirizzo email valido.')
 
         if error is None:
             # Hashiamo la password (MAI salvarla in chiaro!)
@@ -127,4 +129,48 @@ def logout():
     session['lang'] = lang
     flash(_('Logout effettuato. Arrivederci!'), 'success')
     return redirect(url_for('presentations.list_presentations'))
+
+
+@bp.route('/forgot-password', methods=('GET', 'POST'))
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        user = user_repository.get_user_by_email(email)
+        # Sempre mostrare il messaggio generico per sicurezza
+        flash(_('Se l\'email è registrata, riceverai un link per il reset.'), 'success')
+        if user:
+            import secrets
+            from datetime import datetime, timedelta
+            token = secrets.token_urlsafe(32)
+            expires_at = (datetime.now() + timedelta(hours=1)).isoformat()
+            user_repository.save_reset_token(user['id'], token, expires_at)
+            reset_url = url_for('auth.reset_password', token=token, _external=True)
+            # Per test in sviluppo: stampiamo il link in console
+            # In produzione, inviare email reale con Flask-Mail
+            current_app.logger.info(f'Password reset link: {reset_url}')
+        return redirect(url_for('auth.login'))
+    return render_template('auth/forgot_password.html')
+
+
+@bp.route('/reset-password/<token>', methods=('GET', 'POST'))
+def reset_password(token):
+    token_row = user_repository.get_valid_reset_token(token)
+    if not token_row:
+        flash(_('Link non valido o scaduto.'), 'error')
+        return redirect(url_for('auth.forgot_password'))
+
+    if request.method == 'POST':
+        password = request.form.get('password', '').strip()
+        confirm = request.form.get('confirm_password', '').strip()
+        if not password:
+            flash(_('Password obbligatoria.'), 'error')
+        elif password != confirm:
+            flash(_('Le password non coincidono.'), 'error')
+        else:
+            user_repository.update_password(token_row['user_id'], generate_password_hash(password))
+            user_repository.mark_reset_token_used(token_row['id'])
+            flash(_('Password reimpostata con successo. Ora puoi fare login.'), 'success')
+            return redirect(url_for('auth.login'))
+
+    return render_template('auth/reset_password.html', token=token)
 

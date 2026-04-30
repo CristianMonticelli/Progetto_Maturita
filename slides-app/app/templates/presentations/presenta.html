@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="{{ session.get('lang', 'it') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ presentation.title }} - {{ _('Presentazione') }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #000000 0%, #333333 100%);
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        .presentation-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .slide-view {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide {
+            width: 90%;
+            height: 90%;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            border-radius: 20px;
+            padding: 60px;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            animation: slideInFade 0.5s ease-out;
+            position: relative;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        .slide.end-screen {
+            background: linear-gradient(135deg, #1a1a1a 0%, #ff6600 100%);
+        }
+
+        @keyframes slideInFade {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .slide h1 {
+            font-size: 3.5em;
+            margin-bottom: 30px;
+            color: #ff6600;
+            text-shadow: 0 2px 10px rgba(255, 102, 0, 0.3);
+        }
+
+        .slide p {
+            font-size: 1.5em;
+            line-height: 1.8;
+            margin-bottom: 20px;
+            color: #e0e0e0;
+        }
+
+        .slide img {
+            max-width: 80%;
+            max-height: 50%;
+            object-fit: contain;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+
+        .end-screen h1 {
+            font-size: 2.5em;
+            color: #fff;
+        }
+
+        .end-screen p {
+            font-size: 1.3em;
+            color: #f0f0f0;
+            margin-bottom: 40px;
+        }
+
+        /* Top bar */
+        .top-bar {
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.7);
+            opacity: 1;
+            transition: opacity 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .top-bar.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .presentation-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #ff6600;
+        }
+
+        .slide-counter {
+            color: #aaa;
+            font-size: 0.95em;
+        }
+
+        .exit-btn {
+            background: #ff6600;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .exit-btn:hover {
+            background: #ff8c33;
+            transform: scale(1.05);
+        }
+
+        /* Bottom bar */
+        .bottom-bar {
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.7);
+            opacity: 1;
+            transition: opacity 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .bottom-bar.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav-btn {
+            background: #ff6600;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s, transform 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn:hover {
+            background: #ff8c33;
+            transform: scale(1.05);
+        }
+
+        .nav-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            opacity: 0.5;
+            transform: scale(1);
+        }
+
+        .dots {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex: 1;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 102, 0, 0.5);
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .dot.active {
+            background: #ff6600;
+            transform: scale(1.3);
+        }
+
+        .dot:hover {
+            background: #ff8c33;
+        }
+
+        /* Click zones */
+        .click-zone {
+            position: absolute;
+            cursor: pointer;
+        }
+
+        .click-zone.prev {
+            left: 0;
+            top: 0;
+            width: 20%;
+            height: 100%;
+        }
+
+        .click-zone.next {
+            right: 0;
+            top: 0;
+            width: 20%;
+            height: 100%;
+        }
+
+        /* Keyboard hints (shown on first load, fades out) */
+        .keyboard-hints {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #aaa;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            opacity: 0.6;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .keyboard-hints.hidden {
+            opacity: 0;
+        }
+
+        @media (max-width: 768px) {
+            .slide {
+                padding: 40px;
+            }
+
+            .slide h1 {
+                font-size: 2em;
+            }
+
+            .slide p {
+                font-size: 1.1em;
+            }
+
+            .top-bar, .bottom-bar {
+                padding: 15px 20px;
+                flex-wrap: wrap;
+            }
+
+            .nav-btn {
+                padding: 10px 16px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation-container">
+        <!-- Top bar -->
+        <div class="top-bar" id="topBar">
+            <span class="presentation-title">{{ presentation.title }}</span>
+            <span class="slide-counter"><span id="currentSlide">1</span> / {{ slides|length }}</span>
+            <button class="exit-btn" onclick="exitPresentation()">{{ _('Esci dalla presentazione') }}</button>
+        </div>
+
+        <!-- Main slide view -->
+        <div class="slide-view" id="slideView">
+            <!-- End screen -->
+            <div class="slide end-screen active" id="endScreen">
+                <h1>{{ _('Fine presentazione') }}</h1>
+                <p>{{ _('Hai visualizzato tutte le slide.') }}</p>
+                <button class="nav-btn" onclick="exitPresentation()">
+                    {{ _('Torna alla presentazione') }}
+                </button>
+            </div>
+
+            <!-- Slides -->
+            {% for slide in slides %}
+            <div class="slide" id="slide-{{ loop.index0 }}" data-index="{{ loop.index0 }}">
+                <h1>{{ slide.title or 'Slide ' + loop.index|string }}</h1>
+                {% if slide.image_url %}
+                    <img src="{{ slide.image_url }}" alt="Slide image">
+                {% endif %}
+                <p>{{ slide.content or '' }}</p>
+            </div>
+            {% endfor %}
+
+            <!-- Click zones for navigation -->
+            <div class="click-zone prev" onclick="previousSlide()"></div>
+            <div class="click-zone next" onclick="nextSlide()"></div>
+        </div>
+
+        <!-- Bottom bar -->
+        <div class="bottom-bar" id="bottomBar">
+            <button class="nav-btn" id="prevBtn" onclick="previousSlide()">
+                ← {{ _('Precedente') }}
+            </button>
+            <div class="dots" id="dots">
+                {% for slide in slides %}
+                <div class="dot" data-index="{{ loop.index0 }}" onclick="goToSlide({{ loop.index0 }})"></div>
+                {% endfor %}
+            </div>
+            <button class="nav-btn" id="nextBtn" onclick="nextSlide()">
+                {{ _('Successiva') }} →
+            </button>
+        </div>
+
+        <!-- Keyboard hints -->
+        <div class="keyboard-hints" id="keyboardHints">
+            ⌨️ {{ _('Usa le frecce o spazio per navigare. Premi ESC per uscire.') }}
+        </div>
+    </div>
+
+    <script>
+        let currentSlideIndex = 0;
+        const totalSlides = {{ slides|length }};
+        let uiHideTimer = null;
+        let firstInteraction = true;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            showSlide(0);
+            updateDots();
+            updateButtons();
+            
+            // Hide keyboard hints after 3 seconds
+            setTimeout(() => {
+                document.getElementById('keyboardHints').classList.add('hidden');
+            }, 3000);
+        });
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (currentSlideIndex === totalSlides) {
+                if (e.key === 'Escape') {
+                    exitPresentation();
+                }
+                return;
+            }
+
+            switch (e.key) {
+                case 'ArrowLeft':
+                case 'ArrowUp':
+                case 'PageUp':
+                    e.preventDefault();
+                    previousSlide();
+                    break;
+                case 'ArrowRight':
+                case 'ArrowDown':
+                case 'PageDown':
+                case ' ':
+                    e.preventDefault();
+                    nextSlide();
+                    break;
+                case 'f':
+                case 'F':
+                    e.preventDefault();
+                    toggleFullscreen();
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    exitPresentation();
+                    break;
+            }
+            resetUIHideTimer();
+        });
+
+        // Mouse/touch controls
+        document.addEventListener('mousemove', () => {
+            showUI();
+            resetUIHideTimer();
+        });
+
+        document.addEventListener('touchstart', () => {
+            showUI();
+            resetUIHideTimer();
+        });
+
+        // Slide navigation
+        function nextSlide() {
+            if (currentSlideIndex < totalSlides) {
+                currentSlideIndex++;
+                showSlide(currentSlideIndex);
+            }
+        }
+
+        function previousSlide() {
+            if (currentSlideIndex > 0) {
+                currentSlideIndex--;
+                showSlide(currentSlideIndex);
+            }
+        }
+
+        function goToSlide(index) {
+            if (index >= 0 && index < totalSlides) {
+                currentSlideIndex = index;
+                showSlide(index);
+            }
+        }
+
+        function showSlide(index) {
+            // Hide all slides
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+            });
+
+            // Hide end screen
+            document.getElementById('endScreen').classList.remove('active');
+
+            if (index < totalSlides) {
+                // Show normal slide
+                document.getElementById(`slide-${index}`).classList.add('active');
+                document.getElementById('currentSlide').textContent = index + 1;
+            } else {
+                // Show end screen
+                document.getElementById('endScreen').classList.add('active');
+                document.getElementById('currentSlide').textContent = totalSlides;
+            }
+
+            updateDots();
+            updateButtons();
+        }
+
+        function updateDots() {
+            document.querySelectorAll('.dot').forEach((dot, index) => {
+                if (index === currentSlideIndex) {
+                    dot.classList.add('active');
+                } else {
+                    dot.classList.remove('active');
+                }
+            });
+        }
+
+        function updateButtons() {
+            document.getElementById('prevBtn').disabled = currentSlideIndex === 0;
+            document.getElementById('nextBtn').disabled = currentSlideIndex >= totalSlides;
+        }
+
+        // UI auto-hide
+        function showUI() {
+            document.getElementById('topBar').classList.remove('hidden');
+            document.getElementById('bottomBar').classList.remove('hidden');
+        }
+
+        function hideUI() {
+            document.getElementById('topBar').classList.add('hidden');
+            document.getElementById('bottomBar').classList.add('hidden');
+        }
+
+        function resetUIHideTimer() {
+            clearTimeout(uiHideTimer);
+            uiHideTimer = setTimeout(() => {
+                hideUI();
+            }, 3000);
+        }
+
+        // Exit presentation
+        function exitPresentation() {
+            window.location.href = `{{ url_for('presentations.presentation_detail', presentation_id=presentation.id) }}`;
+        }
+
+        // Fullscreen
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Hide UI after initial interaction
+        resetUIHideTimer();
+    </script>
+</body>
+</html>

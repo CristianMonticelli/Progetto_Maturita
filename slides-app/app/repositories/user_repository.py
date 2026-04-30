@@ -42,7 +42,7 @@ def mark_otp_used(token_id):
 # Importiamo la nostra funzione per prendere la connessione
 from app.db import get_db
 
-def create_user(username, password_hash, email=None):
+def create_user(username, password_hash, email):
     """Inserisce un nuovo utente."""
     db = get_db()
     try:
@@ -87,3 +87,37 @@ def get_user_by_id(user_id):
         "SELECT * FROM user WHERE id = ?", (user_id,)
     ).fetchone()
     return user
+
+def save_reset_token(user_id, token, expires_at):
+    """Salva un token di reset password, invalida i precedenti."""
+    db = get_db()
+    db.execute('DELETE FROM password_reset_tokens WHERE user_id=?', (user_id,))
+    db.execute(
+        'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?,?,?)',
+        (user_id, token, expires_at)
+    )
+    db.commit()
+
+def get_valid_reset_token(token):
+    """Ritorna il token se valido, non usato e non scaduto."""
+    from datetime import datetime
+    db = get_db()
+    row = db.execute(
+        'SELECT * FROM password_reset_tokens WHERE token=? AND used=0',
+        (token,)
+    ).fetchone()
+    if row and datetime.fromisoformat(row['expires_at']) > datetime.now():
+        return dict(row)
+    return None
+
+def mark_reset_token_used(token_id):
+    """Marca un token di reset come usato."""
+    db = get_db()
+    db.execute('UPDATE password_reset_tokens SET used=1 WHERE id=?', (token_id,))
+    db.commit()
+
+def update_password(user_id, new_password_hash):
+    """Aggiorna la password di un utente."""
+    db = get_db()
+    db.execute('UPDATE user SET password=? WHERE id=?', (new_password_hash, user_id))
+    db.commit()

@@ -22,12 +22,13 @@
             </div>
             
             <div class="form-group">
-                <label for="email">📧 {{ _('Email') }} <span style="color:#aaa;font-size:0.85rem;">({{ _('opzionale, per recupero password') }})</span></label>
+                <label for="email">📧 {{ _('Email') }}</label>
                 <input
                     type="email"
                     name="email"
                     id="email"
-                    placeholder="{{ _('tua@email.com') }}"
+                    required
+                    placeholder="{{ _('La tua email (per recupero password)') }}"
                     autocomplete="email"
                 >
             </div>

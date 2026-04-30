@@ -1,8 +1,15 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  <h2>{{ _('Presentazione:') }} {{ presentazione['title'] }}</h2>
-  <p>{{ presentazione['description'] }}</p>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+    <div>
+      <h2>{{ _('Presentazione:') }} {{ presentazione['title'] }}</h2>
+      <p>{{ presentazione['description'] }}</p>
+    </div>
+    <a href="{{ url_for('presentations.presenta', presentation_id=presentazione['id']) }}" class="btn" style="background: #ff6600; padding: 15px 30px; font-size: 1.1em; white-space: nowrap;">
+      ▶ {{ _('Presenta') }}
+    </a>
+  </div>
 
   <div class="form-section">
   <h3>{{ _('Cambia colore sfondo a tutte le slide') }}</h3>

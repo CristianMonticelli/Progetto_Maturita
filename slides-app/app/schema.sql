@@ -1,16 +1,26 @@
 DROP TABLE IF EXISTS user;
 DROP TABLE IF EXISTS otp_tokens;
+DROP TABLE IF EXISTS password_reset_tokens;
 
 CREATE TABLE user (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
-    email TEXT,
+    email TEXT NOT NULL,
     mfa_enabled INTEGER DEFAULT 0,
     mfa_secret TEXT
 );
 
 CREATE TABLE otp_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    token TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    used INTEGER DEFAULT 0,
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+);
+
+CREATE TABLE password_reset_tokens (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     token TEXT NOT NULL,

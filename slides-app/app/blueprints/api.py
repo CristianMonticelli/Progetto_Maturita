@@ -189,15 +189,19 @@ def register():
     data = request.get_json()
     username = data.get('username', '').strip()
     password = data.get('password', '').strip()
+    email = data.get('email', '').strip()
 
-    if not username or not password:
-        return jsonify({'ok': False, 'error': 'Username e password obbligatori.'}), 400
+    if not username or not password or not email:
+        return jsonify({'ok': False, 'error': _('Username, email e password obbligatori.')}), 400
+
+    if '@' not in email or '.' not in email:
+        return jsonify({'ok': False, 'error': _('Inserisci un indirizzo email valido.')}), 400
 
     from werkzeug.security import generate_password_hash
     from app.repositories import user_repository
     try:
         hashed_pwd = generate_password_hash(password)
-        user_repository.create_user(username, hashed_pwd)
+        user_repository.create_user(username, hashed_pwd, email)
         return jsonify({'ok': True})
     except ValueError as e:
         return jsonify({'ok': False, 'error': str(e)}), 400
