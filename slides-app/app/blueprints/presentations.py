@@ -114,7 +114,7 @@ def presenta(presentation_id):
         flash(_('Presentazione non trovata.'), 'error')
         return redirect(url_for('presentations.list_presentations'))
     
-    slides = slide_repository.get_slides_by_presentation(presentation_id)
+    slides = slide_repository.get_slides_by_presentation_id(presentation_id)
     return render_template('presentations/presenta.html', presentation=presentation, slides=slides)
 
 @bp.route('/presentazione/<int:presentation_id>/delete')

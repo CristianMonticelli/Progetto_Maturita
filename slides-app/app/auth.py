@@ -1,8 +1,9 @@
 # from flask_babel import _
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, session, url_for
+    Blueprint, flash, g, redirect, render_template, request, session, url_for, current_app
 )
 from flask_babel import _
+from flask_mail import Message
 # werkzeug.security ci offre strumenti professionali per la crittografia
 from werkzeug.security import check_password_hash, generate_password_hash
 from app.repositories import user_repository
@@ -145,9 +146,20 @@ def forgot_password():
             expires_at = (datetime.now() + timedelta(hours=1)).isoformat()
             user_repository.save_reset_token(user['id'], token, expires_at)
             reset_url = url_for('auth.reset_password', token=token, _external=True)
-            # Per test in sviluppo: stampiamo il link in console
-            # In produzione, inviare email reale con Flask-Mail
-            current_app.logger.info(f'Password reset link: {reset_url}')
+            # Invia un'email reale con Flask-Mail
+            mail = current_app.extensions.get('mail')
+            if mail:
+                try:
+                    msg = Message(
+                        subject='Reset password - SlidesApp',
+                        recipients=[email],
+                        body=f'Per reimpostare la password usa questo link:\n\n{reset_url}'
+                    )
+                    mail.send(msg)
+                except Exception as e:
+                    current_app.logger.error(f'Errore invio email reset password: {e}')
+            else:
+                current_app.logger.warning('Flask-Mail non è configurato. Password reset link generato ma non inviato.')
         return redirect(url_for('auth.login'))
     return render_template('auth/forgot_password.html')
 

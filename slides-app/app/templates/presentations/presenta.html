@@ -310,12 +310,12 @@
 
             <!-- Slides -->
             {% for slide in slides %}
-            <div class="slide" id="slide-{{ loop.index0 }}" data-index="{{ loop.index0 }}">
-                <h1>{{ slide.title or 'Slide ' + loop.index|string }}</h1>
-                {% if slide.image_url %}
-                    <img src="{{ slide.image_url }}" alt="Slide image">
+            <div class="slide" id="slide-{{ loop.index0 }}" data-index="{{ loop.index0 }}" data-bg="{{ slide['bg_color'] or '#1a1a2e' }}">
+                <h1>{{ slide['title'] or 'Slide ' + loop.index|string }}</h1>
+                {% if slide['image'] %}
+                    <img src="{{ slide['image'] }}" alt="Slide image">
                 {% endif %}
-                <p>{{ slide.content or '' }}</p>
+                <p>{{ slide['content'] or '' }}</p>
             </div>
             {% endfor %}
 
@@ -442,12 +442,14 @@
             document.getElementById('endScreen').classList.remove('active');
 
             if (index < totalSlides) {
-                // Show normal slide
-                document.getElementById(`slide-${index}`).classList.add('active');
+                const slideEl = document.getElementById(`slide-${index}`);
+                slideEl.classList.add('active');
+                document.querySelector('.slide-view').style.background = slideEl.dataset.bg;
                 document.getElementById('currentSlide').textContent = index + 1;
             } else {
                 // Show end screen
                 document.getElementById('endScreen').classList.add('active');
+                document.querySelector('.slide-view').style.background = 'linear-gradient(135deg, #1a1a1a 0%, #ff6600 100%)';
                 document.getElementById('currentSlide').textContent = totalSlides;
             }
 
@@ -490,7 +492,7 @@
 
         // Exit presentation
         function exitPresentation() {
-            window.location.href = `{{ url_for('presentations.presentation_detail', presentation_id=presentation.id) }}`;
+            window.location.href = "{{ url_for('presentations.presentazione', id=presentation['id']) }}";
         }
 
         // Fullscreen
