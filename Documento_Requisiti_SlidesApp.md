@@ -53,8 +53,8 @@ SlidesApp è uno strumento web per creare, gestire e visualizzare presentazioni 
 
 ### Attori principali
 
-- `Utente autenticato`: può creare e gestire presentazioni e slide proprie, e configurare la sicurezza del proprio account.
-- `Visitatore`: utente non autenticato; può accedere solo alle pagine di login e registrazione.
+- `Visitatore`: utente non autenticato; può consultare le presentazioni pubbliche e accedere alle pagine di login e registrazione.
+- `Utente`: account autenticato; specializzazione di Visitatore. Può creare e gestire presentazioni e slide proprie, e configurare la sicurezza del proprio account.
 
 ---
 
@@ -72,8 +72,7 @@ SlidesApp è uno strumento web per creare, gestire e visualizzare presentazioni 
 8. Riordinamento delle slide all'interno di una presentazione (sposta su / sposta giù).
 9. Eliminazione di una presentazione con rimozione automatica di tutte le slide collegate (cascade delete).
 10. Aggiornamento del colore di sfondo a tutte le slide di una presentazione in un'unica operazione.
-11. Tutte le operazioni CRUD avvengono tramite endpoint JSON (`/api/...`) e aggiornamento del DOM via JavaScript, senza navigazione tra pagine.
-12. Interfaccia disponibile in tre lingue (italiano, inglese, spagnolo) con selettore a bandiera sempre visibile nella topbar.
+11. Interfaccia disponibile in tre lingue (italiano, inglese, spagnolo) con selettore a bandiera sempre visibile nella topbar.
 
 ### 4.2 User stories
 
@@ -90,42 +89,42 @@ SlidesApp è uno strumento web per creare, gestire e visualizzare presentazioni 
 
 ## 5. Requisiti non funzionali
 
-- **Usabilità**: l'interfaccia deve essere intuitiva; le operazioni principali devono avvenire senza cambi di pagina grazie ad AJAX; i messaggi di feedback (successo in verde, errore in rosso) devono comparire e scomparire automaticamente con animazione.
+- **Usabilità**: l'interfaccia deve essere intuitiva; le operazioni principali devono avvenire senza cambi di pagina grazie ad AJAX.
 - **Sicurezza**: le password devono essere memorizzate hashate tramite Werkzeug; i file caricati devono essere validati e i nomi normalizzati con `secure_filename`; le route protette richiedono autenticazione tramite il decoratore `@login_required`; il secondo fattore MFA deve essere verificato prima di completare il login.
 - **Persistenza**: i dati sono memorizzati su SQLite nella cartella `instance/`; il database viene inizializzato tramite `setup_db.py`.
 - **Manutenibilità**: il codice è suddiviso in Blueprint (`presentations`, `slides`, `api`, `auth`) e Repository (`presentation_repository`, `slide_repository`, `user_repository`, `template_repository`).
 - **Portabilità**: l'app deve poter essere eseguita localmente con Python 3.x e un ambiente virtuale; la configurazione è minimale e documentata nel `README.md`.
-- **Internazionalizzazione**: tutte le stringhe visibili all'utente sono avvolte con `_()` di Flask-Babel; le traduzioni sono compilate in file `.mo` a partire dai file `.po`.
-- **Robustezza**: l'app gestisce errori comuni (form non validi, file mancanti, ID inesistenti) restituendo messaggi chiari tramite flash messages categorizzati (`success` / `error`) o risposte JSON.
-- **Documentazione**: il `README.md` include istruzioni per installazione, esecuzione e compilazione delle traduzioni; il codice ha commenti nei punti non ovvi.
+- **Internazionalizzazione**: tutte le stringhe visibili all'utente sono avvolte con `_()` di Flask-Babel.
+- **Robustezza**: l'app gestisce errori comuni (form non validi, file mancanti, ID inesistenti) restituendo messaggi chiari tramite flash messages categorizzati (`success` / `error`).
+- **Documentazione**: il `README.md` include istruzioni per installazione, esecuzione e compilazione delle traduzioni.
 
 ---
 
 ## 6. Casi d'uso
 
-### 6.1 Casi d'uso principali
+### 6.1 Casi d'uso essenziali
 
 1. Registrazione utente
 2. Login
 3. Verifica MFA (secondo fattore)
 4. Configurazione MFA (TOTP o email)
-6. Creare presentazione
-7. Visualizzare elenco presentazioni
-8. Aprire dettaglio presentazione
-9. Aggiungere slide
-10. Modificare slide
-11. Riordinare slide (sposta su / sposta giù)
-12. Eliminare slide
-13. Eliminare presentazione
-14. Cambiare colore di sfondo a tutte le slide
-15. Cambiare lingua interfaccia
+5. Creare presentazione
+6. Visualizzare elenco presentazioni
+7. Aprire dettaglio presentazione
+8. Aggiungere slide
+9. Modificare slide
+10. Riordinare slide (sposta su / sposta giù)
+11. Eliminare slide
+12. Eliminare presentazione
+13. Cambiare colore di sfondo a tutte le slide
+14. Cambiare lingua interfaccia
 
 ### 6.2 Descrizione semplificata dei casi d'uso
 
 - **Registrazione**: il visitatore inserisce username e password; il sistema salva l'account con password hashata e reindirizza al login.
 - **Login**: l'utente inserisce le credenziali; il sistema verifica l'hash della password. Se l'utente ha MFA attivo, viene reindirizzato alla verifica del secondo fattore prima di accedere.
 - **Verifica MFA**: l'utente inserisce il codice a 6 cifre generato dall'app authenticator (TOTP) oppure ricevuto via email (OTP); solo dopo la verifica la sessione viene aperta.
-- **Configurazione MFA**: l'utente autenticato sceglie il metodo (QR code o email), segue le istruzioni guidate e conferma con un codice valido per attivare il secondo fattore.
+
 - **Creare presentazione**: l'utente compila il form con titolo e descrizione; la presentazione viene creata tramite AJAX e appare nella lista senza ricaricare la pagina.
 - **Aggiungere slide**: dall'interno di una presentazione, l'utente compila il form con titolo, testo, colore di sfondo e immagine opzionale; la slide viene aggiunta in coda tramite AJAX.
 - **Modificare slide**: l'utente apre la pagina di modifica, cambia i campi desiderati e salva; le modifiche vengono inviate tramite AJAX.
@@ -133,10 +132,40 @@ SlidesApp è uno strumento web per creare, gestire e visualizzare presentazioni 
 - **Eliminare slide / presentazione**: l'utente clicca il bottone di eliminazione; una chiamata AJAX rimuove l'elemento e lo fa sparire dal DOM con animazione.
 - **Cambiare lingua**: l'utente clicca la bandiera desiderata nel menu a tendina in alto a destra; la lingua viene salvata in sessione e applicata a tutta l'interfaccia.
 
-### 6.3 Diagramma dei casi d'uso
+### 6.3 Relazioni tra casi d'uso: include ed extend
 
+In un diagramma dei casi d'uso si usano due tipi di relazioni aggiuntive:
 
+- `<<include>>`: rappresenta un comportamento obbligatorio e riutilizzabile. Un caso d'uso base include un altro quando quel comportamento viene sempre eseguito.
+- `<<extend>>`: rappresenta un comportamento opzionale o condizionale che si aggiunge al caso d'uso base solo in certe situazioni.
+
+I casi d'uso non devono essere confusi con i rapporti tra attori. In SlidesApp, `Utente` è una specializzazione di `Visitatore`: l'utente può fare tutto ciò che può fare un visitatore, più alcune azioni riservate. Questo si modella con una generalizzazione tra attori:
+
+```
+   Visitatore
+       ^
+       |
+     Utente
+```
+
+Relazioni `<<include>>` — la verifica dell'autenticazione è un passaggio obbligatorio per tutte le azioni che modificano i dati:
+
+- `Crea presentazione` <<include>> `Verifica autenticazione`
+- `Aggiungi slide` <<include>> `Verifica autenticazione`
+- `Modifica slide` <<include>> `Verifica autenticazione`
+- `Elimina slide` <<include>> `Verifica autenticazione`
+- `Elimina presentazione` <<include>> `Verifica autenticazione`
+
+Relazioni `<<extend>>` — comportamenti opzionali che si attivano solo in certe condizioni:
+
+- `Verifica MFA` <<extend>> `Login`: il sistema chiede il codice MFA solo se l'utente lo ha attivato.
+- `Cambia colore a tutte le slide` <<extend>> `Modifica presentazione`: l'aggiornamento globale del colore è un'azione opzionale disponibile nella pagina della presentazione.
+
+### 6.4 Diagramma dei casi d'uso
+
+Il diagramma dei casi d'uso è stato generato come immagine a partire dal file PlantUML diagramma_casi_uso.puml.
 ![Diagramma casi d'uso](diagram.png)
+
 ---
 
 ## 7. Glossario dei termini
@@ -144,16 +173,8 @@ SlidesApp è uno strumento web per creare, gestire e visualizzare presentazioni 
 - `Presentazione`: raccolta ordinata di slide con attributi `id`, `title`, `description`, `author_id`, `created_at`.
 - `Slide`: elemento di una presentazione con `id`, `presentation_id`, `title`, `content`, `position`, `image`, `bg_color`.
 - `Template`: modello di layout per le slide (tabella `templates` con `name` e `layout`); predefinito lato server.
-- `Repository`: componente software che incapsula l'accesso al database (es. `slide_repository.py`).
-- `Blueprint`: modulo Flask che raggruppa route correlate; i blueprint del progetto sono `presentations`, `slides`, `api`, `auth`.
 - `Utente`: account registrato con `id`, `username`, `password` (hashata), `email` (per MFA email), `mfa_enabled`, `mfa_secret`.
-- `MFA`: Multi-Factor Authentication, autenticazione a due fattori. Aggiunge un secondo controllo d'identità oltre alla password.
-- `TOTP`: Time-based One-Time Password (standard RFC 6238). Codice a 6 cifre che cambia ogni 30 secondi, generato da un'app come Google Authenticator. Non richiede connessione internet.
-- `OTP email`: codice a 6 cifre generato casualmente, salvato nel DB con scadenza di 10 minuti e inviato via email all'utente.
-- `AJAX`: tecnica che usa `fetch()` in JavaScript per comunicare con gli endpoint `/api/` e aggiornare il DOM senza ricaricare la pagina.
-- `Flask-Babel`: libreria per l'internazionalizzazione; usa il sistema GNU gettext con file `.po` (testo) e `.mo` (compilato binario).
-- `Cascade delete`: eliminazione automatica delle slide quando si elimina una presentazione, definita nello schema SQL con `ON DELETE CASCADE`.
-
+- `Visitatore`: persona non autenticata che può consultare le presentazioni pubbliche e accedere a login e registrazione.
 ---
 
 ## 8. Pianificazione e milestone
@@ -181,8 +202,8 @@ gantt
     dateFormat  YYYY-MM-DD
     title Piano di progetto SlidesApp
     section Analisi
-    Requisiti e schema ER         :a1, 2026-03-16, 5d
-    Diagramma UML                 :a2, after a1, 3d
+    Requisiti e schema ER         :a1, 2026-04-10, 5d
+    Diagramma UML e casi d'uso    :a2, after a1, 3d
     section Sviluppo
     Autenticazione utenti         :b1, after a2, 5d
     CRUD presentazioni e slide    :b2, after b1, 6d
@@ -194,8 +215,6 @@ gantt
     Test e documentazione         :c2, after c1, 3d
     Consegna su GitHub            :c3, after c2, 2d
 ```
-
-> Il Gantt è uno strumento utile per pianificare, ma in classe può bastare anche una tabella di milestone.
 
 ---
 
@@ -248,8 +267,6 @@ erDiagram
     USER ||--o{ OTP_TOKENS : riceve
 ```
 
-
-
 ---
 
 ## 10. Diagramma UML delle classi
@@ -299,9 +316,8 @@ classDiagram
 
     User "1" -- "*" Presentation : crea
     Presentation "1" -- "*" Slide : contiene
-    Slide "*" -- "0..1" Template : usa
+    Slide "*" -- "1" Template : usa
     User "1" -- "*" OtpToken : riceve
 ```
 
 ---
-
