@@ -5,509 +5,395 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ presentation.title }} - {{ _('Presentazione') }}</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #000000 0%, #333333 100%);
-            color: #fff;
+            width: 100%; height: 100%;
+            background: #111;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow: hidden;
         }
 
         .presentation-container {
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             display: flex;
             flex-direction: column;
-            position: relative;
         }
 
+        /* ── Slide view ───────────────────────────────────────── */
         .slide-view {
             flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            position: relative;
             overflow: hidden;
+            position: relative;
+            background: #111;
         }
 
+        /* La slide replica esattamente .ppt-slide dalla schermata di creazione,
+           ma occupa il 90% dello schermo invece di essere una card piccola. */
         .slide {
             width: 90%;
             height: 90%;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-            border-radius: 20px;
-            padding: 60px;
+            border: 2px solid #ff6600;
+            border-radius: 16px;
+            box-shadow: 0 8px 40px rgba(255, 102, 0, 0.35);
+            padding: 40px 50px;
             display: none;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
-            animation: slideInFade 0.5s ease-out;
-            position: relative;
+            animation: slideInFade 0.4s ease-out;
+            overflow: hidden;
         }
 
-        .slide.active {
-            display: flex;
-        }
-
-        .slide.end-screen {
-            background: linear-gradient(135deg, #1a1a1a 0%, #ff6600 100%);
-        }
+        .slide.active { display: flex; }
 
         @keyframes slideInFade {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
+            from { opacity: 0; transform: scale(0.97); }
+            to   { opacity: 1; transform: scale(1); }
         }
 
-        .slide h1 {
-            font-size: 3.5em;
-            margin-bottom: 30px;
+        /* Numero slide (in alto a sinistra, come .slide-meta) */
+        .slide-meta {
+            margin-bottom: 16px;
+            flex-shrink: 0;
+        }
+
+        .slide-number {
+            background: rgba(255,102,0,0.15);
+            border: 1px solid rgba(255,102,0,0.4);
             color: #ff6600;
-            text-shadow: 0 2px 10px rgba(255, 102, 0, 0.3);
+            border-radius: 20px;
+            padding: 4px 14px;
+            font-size: 0.85em;
+            font-weight: 600;
         }
 
-        .slide p {
-            font-size: 1.5em;
-            line-height: 1.8;
-            margin-bottom: 20px;
-            color: #e0e0e0;
+        /* Wrapper contenuto (replica .slide-content-wrapper) */
+        .slide-content-wrapper {
+            flex: 1;
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            min-height: 0;
         }
 
-        .slide img {
-            max-width: 80%;
-            max-height: 50%;
-            object-fit: contain;
-            margin: 20px 0;
+        /* Area testo (replica .slide-text) */
+        .slide-text {
+            flex: 1;
+            min-width: 0;
             border-radius: 10px;
         }
 
-        .end-screen h1 {
-            font-size: 2.5em;
-            color: #fff;
+        /* Titolo (replica .ppt-slide-title) */
+        .slide-text .ppt-slide-title {
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #ff6600;
+            line-height: 1.2;
+            /* font-size impostato inline da Jinja */
         }
 
-        .end-screen p {
-            font-size: 1.3em;
-            color: #f0f0f0;
-            margin-bottom: 40px;
+        /* Contenuto (replica .ppt-slide-content) */
+        .slide-text .ppt-slide-content {
+            background: rgba(249, 249, 249, 0.92);
+            border-radius: 10px;
+            padding: 20px 25px;
+            color: #333333;
+            line-height: 1.6;
+            border: 1px solid #e0e0e0;
+            /* font-size impostato inline da Jinja */
         }
 
-        /* Top bar */
+        /* Area immagine (replica .slide-image) */
+        .slide-image {
+            flex: 0 0 42%;
+            background: #fff;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            align-self: stretch;
+        }
+
+        .slide-image img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        /* Fine presentazione */
+        .end-screen {
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: linear-gradient(135deg, #1a1a1a 0%, #ff6600 100%) !important;
+            border-color: #ff6600;
+        }
+
+        .end-screen h1 { font-size: 2.8em; color: #fff; margin-bottom: 20px; }
+        .end-screen p  { font-size: 1.3em; color: #f0f0f0; margin-bottom: 36px; }
+
+        /* ── Barra in alto ────────────────────────────────────── */
         .top-bar {
-            padding: 20px 30px;
+            padding: 16px 28px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(0, 0, 0, 0.7);
-            opacity: 1;
-            transition: opacity 0.3s ease;
+            background: rgba(0,0,0,0.75);
             backdrop-filter: blur(10px);
+            opacity: 1;
+            transition: opacity 0.3s;
+            flex-shrink: 0;
         }
 
-        .top-bar.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
+        .top-bar.hidden { opacity: 0; pointer-events: none; }
 
-        .presentation-title {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #ff6600;
-        }
-
-        .slide-counter {
-            color: #aaa;
-            font-size: 0.95em;
-        }
+        .presentation-title { font-size: 1.1em; font-weight: bold; color: #ff6600; }
+        .slide-counter { color: #aaa; font-size: 0.9em; }
 
         .exit-btn {
-            background: #ff6600;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background 0.3s, transform 0.2s;
+            background: #ff6600; color: #fff; border: none;
+            padding: 9px 18px; border-radius: 8px; cursor: pointer;
+            font-size: 0.95em; transition: background 0.2s, transform 0.15s;
         }
+        .exit-btn:hover { background: #ff8c33; transform: scale(1.04); }
 
-        .exit-btn:hover {
-            background: #ff8c33;
-            transform: scale(1.05);
-        }
-
-        /* Bottom bar */
+        /* ── Barra in basso ───────────────────────────────────── */
         .bottom-bar {
-            padding: 20px 30px;
+            padding: 16px 28px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(0, 0, 0, 0.7);
-            opacity: 1;
-            transition: opacity 0.3s ease;
+            background: rgba(0,0,0,0.75);
             backdrop-filter: blur(10px);
+            opacity: 1;
+            transition: opacity 0.3s;
+            flex-shrink: 0;
         }
 
-        .bottom-bar.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .nav-buttons {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
+        .bottom-bar.hidden { opacity: 0; pointer-events: none; }
 
         .nav-btn {
-            background: #ff6600;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background 0.3s, transform 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            background: #ff6600; color: #fff; border: none;
+            padding: 10px 22px; border-radius: 8px; cursor: pointer;
+            font-size: 0.95em; transition: background 0.2s, transform 0.15s;
         }
+        .nav-btn:hover  { background: #ff8c33; transform: scale(1.04); }
+        .nav-btn:disabled { background: #555; cursor: not-allowed; opacity: 0.5; transform: none; }
 
-        .nav-btn:hover {
-            background: #ff8c33;
-            transform: scale(1.05);
-        }
-
-        .nav-btn:disabled {
-            background: #666;
-            cursor: not-allowed;
-            opacity: 0.5;
-            transform: scale(1);
-        }
-
-        .dots {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex: 1;
-        }
+        .dots { display: flex; gap: 10px; justify-content: center; flex: 1; }
 
         .dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: rgba(255, 102, 0, 0.5);
-            cursor: pointer;
-            transition: background 0.3s, transform 0.2s;
+            width: 11px; height: 11px; border-radius: 50%;
+            background: rgba(255,102,0,0.4); cursor: pointer;
+            transition: background 0.2s, transform 0.15s;
         }
+        .dot.active { background: #ff6600; transform: scale(1.3); }
+        .dot:hover  { background: #ff8c33; }
 
-        .dot.active {
-            background: #ff6600;
-            transform: scale(1.3);
-        }
+        /* Zone click navigazione */
+        .click-zone { position: absolute; cursor: pointer; top: 0; height: 100%; }
+        .click-zone.prev { left: 0;  width: 18%; }
+        .click-zone.next { right: 0; width: 18%; }
 
-        .dot:hover {
-            background: #ff8c33;
-        }
-
-        /* Click zones */
-        .click-zone {
-            position: absolute;
-            cursor: pointer;
-        }
-
-        .click-zone.prev {
-            left: 0;
-            top: 0;
-            width: 20%;
-            height: 100%;
-        }
-
-        .click-zone.next {
-            right: 0;
-            top: 0;
-            width: 20%;
-            height: 100%;
-        }
-
-        /* Keyboard hints (shown on first load, fades out) */
+        /* Hint tastiera */
         .keyboard-hints {
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.9);
-            color: #aaa;
-            padding: 15px 25px;
-            border-radius: 8px;
-            font-size: 0.9em;
-            opacity: 0.6;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
+            position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.85); color: #aaa;
+            padding: 12px 22px; border-radius: 8px; font-size: 0.85em;
+            opacity: 0.7; pointer-events: none; transition: opacity 0.3s;
         }
-
-        .keyboard-hints.hidden {
-            opacity: 0;
-        }
+        .keyboard-hints.hidden { opacity: 0; }
 
         @media (max-width: 768px) {
-            .slide {
-                padding: 40px;
-            }
-
-            .slide h1 {
-                font-size: 2em;
-            }
-
-            .slide p {
-                font-size: 1.1em;
-            }
-
-            .top-bar, .bottom-bar {
-                padding: 15px 20px;
-                flex-wrap: wrap;
-            }
-
-            .nav-btn {
-                padding: 10px 16px;
-                font-size: 0.9em;
-            }
+            .slide { padding: 24px 28px; }
+            .slide-text .ppt-slide-title { font-size: 1.6em !important; }
+            .slide-text .ppt-slide-content { font-size: 1em !important; }
+            .top-bar, .bottom-bar { flex-wrap: wrap; padding: 12px 16px; }
+            .nav-btn { padding: 8px 14px; font-size: 0.85em; }
+            .slide-image { flex: 0 0 38%; }
         }
     </style>
 </head>
 <body>
-    <div class="presentation-container">
-        <!-- Top bar -->
-        <div class="top-bar" id="topBar">
-            <span class="presentation-title">{{ presentation.title }}</span>
-            <span class="slide-counter"><span id="currentSlide">1</span> / {{ slides|length }}</span>
-            <button class="exit-btn" onclick="exitPresentation()">{{ _('Esci dalla presentazione') }}</button>
-        </div>
+<div class="presentation-container">
 
-        <!-- Main slide view -->
-        <div class="slide-view" id="slideView">
-            <!-- End screen -->
-            <div class="slide end-screen active" id="endScreen">
-                <h1>{{ _('Fine presentazione') }}</h1>
-                <p>{{ _('Hai visualizzato tutte le slide.') }}</p>
-                <button class="nav-btn" onclick="exitPresentation()">
-                    {{ _('Torna alla presentazione') }}
-                </button>
-            </div>
-
-            <!-- Slides -->
-            {% for slide in slides %}
-            <div class="slide" id="slide-{{ loop.index0 }}" data-index="{{ loop.index0 }}" data-bg="{{ slide['bg_color'] or '#1a1a2e' }}">
-                <h1>{{ slide['title'] or 'Slide ' + loop.index|string }}</h1>
-                {% if slide['image'] %}
-                    <img src="{{ slide['image'] }}" alt="Slide image">
-                {% endif %}
-                <p>{{ slide['content'] or '' }}</p>
-            </div>
-            {% endfor %}
-
-            <!-- Click zones for navigation -->
-            <div class="click-zone prev" onclick="previousSlide()"></div>
-            <div class="click-zone next" onclick="nextSlide()"></div>
-        </div>
-
-        <!-- Bottom bar -->
-        <div class="bottom-bar" id="bottomBar">
-            <button class="nav-btn" id="prevBtn" onclick="previousSlide()">
-                ← {{ _('Precedente') }}
-            </button>
-            <div class="dots" id="dots">
-                {% for slide in slides %}
-                <div class="dot" data-index="{{ loop.index0 }}" onclick="goToSlide({{ loop.index0 }})"></div>
-                {% endfor %}
-            </div>
-            <button class="nav-btn" id="nextBtn" onclick="nextSlide()">
-                {{ _('Successiva') }} →
-            </button>
-        </div>
-
-        <!-- Keyboard hints -->
-        <div class="keyboard-hints" id="keyboardHints">
-            ⌨️ {{ _('Usa le frecce o spazio per navigare. Premi ESC per uscire.') }}
-        </div>
+    <!-- Barra in alto -->
+    <div class="top-bar" id="topBar">
+        <span class="presentation-title">{{ presentation.title }}</span>
+        <span class="slide-counter"><span id="currentSlide">1</span> / {{ slides|length }}</span>
+        <button class="exit-btn" onclick="exitPresentation()">{{ _('Esci dalla presentazione') }}</button>
     </div>
 
-    <script>
-        let currentSlideIndex = 0;
-        const totalSlides = {{ slides|length }};
-        let uiHideTimer = null;
-        let firstInteraction = true;
+    <!-- Area slide -->
+    <div class="slide-view" id="slideView">
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            showSlide(0);
-            updateDots();
-            updateButtons();
-            
-            // Hide keyboard hints after 3 seconds
-            setTimeout(() => {
-                document.getElementById('keyboardHints').classList.add('hidden');
-            }, 3000);
-        });
+        <!-- Schermata finale -->
+        <div class="slide end-screen active" id="endScreen">
+            <h1>{{ _('Fine presentazione') }}</h1>
+            <p>{{ _('Hai visualizzato tutte le slide.') }}</p>
+            <button class="nav-btn" onclick="exitPresentation()">{{ _('Torna alla presentazione') }}</button>
+        </div>
 
-        // Keyboard controls
-        document.addEventListener('keydown', (e) => {
-            if (currentSlideIndex === totalSlides) {
-                if (e.key === 'Escape') {
-                    exitPresentation();
-                }
-                return;
-            }
+        <!-- Slide -->
+        {% for slide in slides %}
+        <div class="slide"
+             id="slide-{{ loop.index0 }}"
+             data-index="{{ loop.index0 }}"
+             style="background: {{ slide['bg_color'] or '#ffffff' }};">
 
-            switch (e.key) {
-                case 'ArrowLeft':
-                case 'ArrowUp':
-                case 'PageUp':
-                    e.preventDefault();
-                    previousSlide();
-                    break;
-                case 'ArrowRight':
-                case 'ArrowDown':
-                case 'PageDown':
-                case ' ':
-                    e.preventDefault();
-                    nextSlide();
-                    break;
-                case 'f':
-                case 'F':
-                    e.preventDefault();
-                    toggleFullscreen();
-                    break;
-                case 'Escape':
-                    e.preventDefault();
-                    exitPresentation();
-                    break;
-            }
-            resetUIHideTimer();
-        });
+            <div class="slide-meta">
+                <span class="slide-number">{{ _('Slide') }} {{ loop.index }}</span>
+            </div>
 
-        // Mouse/touch controls
-        document.addEventListener('mousemove', () => {
-            showUI();
-            resetUIHideTimer();
-        });
+            <div class="slide-content-wrapper">
 
-        document.addEventListener('touchstart', () => {
-            showUI();
-            resetUIHideTimer();
-        });
+                <!-- Testo -->
+                <div class="slide-text"
+                     style="{{ 'background:' + slide['box_color'] + ';border-radius:10px;padding:16px 20px;' if slide['box_color'] else '' }}">
+                    <div class="ppt-slide-title"
+                         style="font-size:{{ slide['title_font_size'] or 48 }}px;">
+                        {{ slide['title'] or ('Slide ' + loop.index|string) }}
+                    </div>
+                    <div class="ppt-slide-content"
+                         style="font-size:{{ slide['content_font_size'] or 20 }}px;{{ 'background:transparent;border-color:rgba(0,0,0,0.12);' if slide['box_color'] else '' }}">
+                        {{ slide['content'] or '' }}
+                    </div>
+                </div>
 
-        // Slide navigation
-        function nextSlide() {
-            if (currentSlideIndex < totalSlides) {
-                currentSlideIndex++;
-                showSlide(currentSlideIndex);
-            }
+                <!-- Immagine (opzionale) -->
+                {% if slide['image'] %}
+                <div class="slide-image">
+                    <img src="{{ slide['image'] }}" alt="Slide image">
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Zone click navigazione -->
+        <div class="click-zone prev" onclick="previousSlide()"></div>
+        <div class="click-zone next" onclick="nextSlide()"></div>
+    </div>
+
+    <!-- Barra in basso -->
+    <div class="bottom-bar" id="bottomBar">
+        <button class="nav-btn" id="prevBtn" onclick="previousSlide()">← {{ _('Precedente') }}</button>
+        <div class="dots" id="dots">
+            {% for slide in slides %}
+            <div class="dot" onclick="goToSlide({{ loop.index0 }})"></div>
+            {% endfor %}
+        </div>
+        <button class="nav-btn" id="nextBtn" onclick="nextSlide()">{{ _('Successiva') }} →</button>
+    </div>
+
+    <div class="keyboard-hints" id="keyboardHints">
+        ⌨️ {{ _('Usa le frecce o spazio per navigare. Premi ESC per uscire.') }}
+    </div>
+</div>
+
+<script>
+    let currentSlideIndex = 0;
+    const totalSlides = {{ slides|length }};
+    let uiHideTimer = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        showSlide(0);
+        setTimeout(() => document.getElementById('keyboardHints').classList.add('hidden'), 3000);
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (currentSlideIndex === totalSlides) {
+            if (e.key === 'Escape') exitPresentation();
+            return;
         }
-
-        function previousSlide() {
-            if (currentSlideIndex > 0) {
-                currentSlideIndex--;
-                showSlide(currentSlideIndex);
-            }
+        switch (e.key) {
+            case 'ArrowLeft': case 'ArrowUp': case 'PageUp':
+                e.preventDefault(); previousSlide(); break;
+            case 'ArrowRight': case 'ArrowDown': case 'PageDown': case ' ':
+                e.preventDefault(); nextSlide(); break;
+            case 'f': case 'F':
+                e.preventDefault(); toggleFullscreen(); break;
+            case 'Escape':
+                e.preventDefault(); exitPresentation(); break;
         }
-
-        function goToSlide(index) {
-            if (index >= 0 && index < totalSlides) {
-                currentSlideIndex = index;
-                showSlide(index);
-            }
-        }
-
-        function showSlide(index) {
-            // Hide all slides
-            document.querySelectorAll('.slide').forEach(slide => {
-                slide.classList.remove('active');
-            });
-
-            // Hide end screen
-            document.getElementById('endScreen').classList.remove('active');
-
-            if (index < totalSlides) {
-                const slideEl = document.getElementById(`slide-${index}`);
-                slideEl.classList.add('active');
-                document.querySelector('.slide-view').style.background = slideEl.dataset.bg;
-                document.getElementById('currentSlide').textContent = index + 1;
-            } else {
-                // Show end screen
-                document.getElementById('endScreen').classList.add('active');
-                document.querySelector('.slide-view').style.background = 'linear-gradient(135deg, #1a1a1a 0%, #ff6600 100%)';
-                document.getElementById('currentSlide').textContent = totalSlides;
-            }
-
-            updateDots();
-            updateButtons();
-        }
-
-        function updateDots() {
-            document.querySelectorAll('.dot').forEach((dot, index) => {
-                if (index === currentSlideIndex) {
-                    dot.classList.add('active');
-                } else {
-                    dot.classList.remove('active');
-                }
-            });
-        }
-
-        function updateButtons() {
-            document.getElementById('prevBtn').disabled = currentSlideIndex === 0;
-            document.getElementById('nextBtn').disabled = currentSlideIndex >= totalSlides;
-        }
-
-        // UI auto-hide
-        function showUI() {
-            document.getElementById('topBar').classList.remove('hidden');
-            document.getElementById('bottomBar').classList.remove('hidden');
-        }
-
-        function hideUI() {
-            document.getElementById('topBar').classList.add('hidden');
-            document.getElementById('bottomBar').classList.add('hidden');
-        }
-
-        function resetUIHideTimer() {
-            clearTimeout(uiHideTimer);
-            uiHideTimer = setTimeout(() => {
-                hideUI();
-            }, 3000);
-        }
-
-        // Exit presentation
-        function exitPresentation() {
-            window.location.href = "{{ url_for('presentations.presentazione', id=presentation['id']) }}";
-        }
-
-        // Fullscreen
-        function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
-                });
-            } else {
-                document.exitFullscreen();
-            }
-        }
-
-        // Hide UI after initial interaction
         resetUIHideTimer();
-    </script>
+    });
+
+    document.addEventListener('mousemove',  () => { showUI(); resetUIHideTimer(); });
+    document.addEventListener('touchstart', () => { showUI(); resetUIHideTimer(); });
+
+    function nextSlide() {
+        if (currentSlideIndex < totalSlides) { currentSlideIndex++; showSlide(currentSlideIndex); }
+    }
+
+    function previousSlide() {
+        if (currentSlideIndex > 0) { currentSlideIndex--; showSlide(currentSlideIndex); }
+    }
+
+    function goToSlide(index) {
+        if (index >= 0 && index < totalSlides) { currentSlideIndex = index; showSlide(index); }
+    }
+
+    function showSlide(index) {
+        document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+        document.getElementById('endScreen').classList.remove('active');
+
+        if (index < totalSlides) {
+            document.getElementById(`slide-${index}`).classList.add('active');
+            document.getElementById('currentSlide').textContent = index + 1;
+        } else {
+            document.getElementById('endScreen').classList.add('active');
+            document.getElementById('currentSlide').textContent = totalSlides;
+        }
+        updateDots();
+        updateButtons();
+    }
+
+    function updateDots() {
+        document.querySelectorAll('.dot').forEach((dot, i) =>
+            dot.classList.toggle('active', i === currentSlideIndex));
+    }
+
+    function updateButtons() {
+        document.getElementById('prevBtn').disabled = currentSlideIndex === 0;
+        document.getElementById('nextBtn').disabled = currentSlideIndex >= totalSlides;
+    }
+
+    function showUI() {
+        document.getElementById('topBar').classList.remove('hidden');
+        document.getElementById('bottomBar').classList.remove('hidden');
+    }
+
+    function hideUI() {
+        document.getElementById('topBar').classList.add('hidden');
+        document.getElementById('bottomBar').classList.add('hidden');
+    }
+
+    function resetUIHideTimer() {
+        clearTimeout(uiHideTimer);
+        uiHideTimer = setTimeout(hideUI, 3000);
+    }
+
+    function exitPresentation() {
+        window.location.href = "{{ url_for('presentations.presentazione', id=presentation['id']) }}";
+    }
+
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err =>
+                console.log(`Fullscreen error: ${err.message}`));
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    resetUIHideTimer();
+</script>
 </body>
 </html>

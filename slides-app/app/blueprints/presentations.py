@@ -63,7 +63,9 @@ def presentazione(id):
     # Reorder positions to ensure they are 1,2,3,...
     for i, slide in enumerate(slides):
         slide_repository.update_slide(
-            slide['id'], slide['title'], slide['content'], i + 1, slide.get('image'), slide.get('bg_color', '#ffffff')
+            slide['id'], slide['title'], slide['content'], i + 1, slide.get('image'),
+            slide.get('bg_color', '#ffffff'), slide.get('box_color'),
+            slide.get('title_font_size', 48), slide.get('content_font_size', 20)
         )
 
     if request.method == 'POST':
@@ -72,6 +74,9 @@ def presentazione(id):
         image_file = request.files.get('image')
         image_path = save_image(image_file)
         bg_color = request.form.get('bg_color', '#ffffff').strip()
+        box_color = request.form.get('box_color', '').strip() or None
+        title_font_size = int(request.form.get('title_font_size', 48) or 48)
+        content_font_size = int(request.form.get('content_font_size', 20) or 20)
 
         error = None
         if not title:
@@ -81,7 +86,7 @@ def presentazione(id):
             flash(error)
         else:
             position = len(slides) + 1
-            slide_repository.create_slide(id, title, content, position, image_path, bg_color)
+            slide_repository.create_slide(id, title, content, position, image_path, bg_color, box_color, title_font_size, content_font_size)
             return redirect(url_for('presentations.presentazione', id=id))
 
     return render_template('presentations/presentation_datail.html', presentazione=presentazione, slides=slides)
@@ -99,7 +104,9 @@ def change_all_slides_bg_color(presentation_id):
     slides = slide_repository.get_slides_by_presentation_id(presentation_id)
     for slide in slides:
         slide_repository.update_slide(
-            slide['id'], slide['title'], slide['content'], slide['position'], slide.get('image'), bg_color
+            slide['id'], slide['title'], slide['content'], slide['position'], slide.get('image'),
+            bg_color, slide.get('box_color'),
+            slide.get('title_font_size', 48), slide.get('content_font_size', 20)
         )
 
     flash('Colore sfondo aggiornato a tutte le slide.')

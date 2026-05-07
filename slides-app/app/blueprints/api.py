@@ -66,6 +66,9 @@ def create_slide(presentation_id):
     title = request.form.get('title', '').strip()
     content = request.form.get('content', '').strip()
     bg_color = request.form.get('bg_color', '#ffffff').strip()
+    box_color = request.form.get('box_color', '').strip() or None
+    title_font_size = int(request.form.get('title_font_size', 48) or 48)
+    content_font_size = int(request.form.get('content_font_size', 20) or 20)
     image_file = request.files.get('image')
     image_path = save_image(image_file)
 
@@ -74,7 +77,7 @@ def create_slide(presentation_id):
 
     slides = slide_repository.get_slides_by_presentation_id(presentation_id)
     position = len(slides) + 1
-    slide = slide_repository.create_slide(presentation_id, title, content, position, image_path, bg_color)
+    slide = slide_repository.create_slide(presentation_id, title, content, position, image_path, bg_color, box_color, title_font_size, content_font_size)
     return jsonify({'ok': True, 'slide': slide})
 
 @bp.route('/slides/<int:slide_id>/update', methods=['POST'])
@@ -91,6 +94,9 @@ def update_slide(slide_id):
     title = request.form.get('title', '').strip()
     content = request.form.get('content', '').strip()
     bg_color = request.form.get('bg_color', '#ffffff').strip()
+    box_color = request.form.get('box_color', '').strip() or None
+    title_font_size = int(request.form.get('title_font_size', 48) or 48)
+    content_font_size = int(request.form.get('content_font_size', 20) or 20)
     remove_image = request.form.get('remove_image')
     image_file = request.files.get('image')
     if remove_image:
@@ -102,7 +108,7 @@ def update_slide(slide_id):
         return jsonify({'ok': False, 'error': 'Il titolo della slide è obbligatorio.'}), 400
 
     position = slide['position']
-    updated_slide = slide_repository.update_slide(slide_id, title, content, position, image_path, bg_color)
+    updated_slide = slide_repository.update_slide(slide_id, title, content, position, image_path, bg_color, box_color, title_font_size, content_font_size)
     if not updated_slide:
         return jsonify({'ok': False, 'error': 'Errore nell\'aggiornamento della slide.'}), 500
     return jsonify({'ok': True, 'slide': updated_slide})
@@ -165,7 +171,33 @@ def change_all_slides_bg_color(presentation_id):
     slides = slide_repository.get_slides_by_presentation_id(presentation_id)
     for slide in slides:
         slide_repository.update_slide(
-            slide['id'], slide['title'], slide['content'], slide['position'], slide.get('image'), bg_color
+            slide['id'], slide['title'], slide['content'], slide['position'], slide.get('image'),
+            bg_color, slide.get('box_color'),
+            slide.get('title_font_size', 48), slide.get('content_font_size', 20)
+        )
+    return jsonify({'ok': True})
+
+
+@bp.route('/presentations/<int:presentation_id>/change_all', methods=['POST'])
+@login_required
+def change_all_slides(presentation_id):
+    presentation = presentation_repository.get_presentation_by_id(presentation_id)
+    if not presentation or presentation['author_id'] != g.user['id']:
+        return jsonify({'ok': False, 'error': 'Presentazione non trovata.'}), 404
+
+    data = request.get_json()
+    bg_color = data.get('bg_color', '#ffffff').strip()
+    box_color_raw = data.get('box_color')
+    box_color = box_color_raw.strip() if box_color_raw else None
+    title_font_size = int(data.get('title_font_size', 48) or 48)
+    content_font_size = int(data.get('content_font_size', 20) or 20)
+
+    slides = slide_repository.get_slides_by_presentation_id(presentation_id)
+    for slide in slides:
+        slide_repository.update_slide(
+            slide['id'], slide['title'], slide['content'], slide['position'], slide.get('image'),
+            bg_color, box_color,
+            title_font_size, content_font_size
         )
     return jsonify({'ok': True})
 

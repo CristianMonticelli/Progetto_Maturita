@@ -157,7 +157,11 @@ def forgot_password():
                     )
                     mail.send(msg)
                 except Exception as e:
-                    current_app.logger.error(f'Errore invio email reset password: {e}')
+                    import traceback
+                    current_app.logger.error(
+                        f'Errore invio email reset password a {email}: {e}\n'
+                        f'{traceback.format_exc()}'
+                    )
             else:
                 current_app.logger.warning('Flask-Mail non è configurato. Password reset link generato ma non inviato.')
         return redirect(url_for('auth.login'))

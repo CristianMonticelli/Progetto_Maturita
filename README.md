@@ -100,7 +100,14 @@ pip install flask
 python setup_db.py
 ```
 
-5. Avviare l'applicazione:
+5. Configurare le credenziali email (opzionale, necessario per il recupero password):
+
+```bash
+cp .env.example .env
+# Poi aprire .env e inserire le credenziali Gmail
+```
+
+6. Avviare l'applicazione:
 
 ```bash
 python run.py
@@ -108,7 +115,37 @@ python run.py
 
 ---
 
-## �️ Sviluppo
+## Configurazione email (recupero password)
+
+Il recupero della password via email è una funzionalità opzionale. Senza configurazione, il recupero non invierà email ma l'app funziona normalmente.
+
+### Come configurare
+
+1. Copia `.env.example` in `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Apri `.env` e inserisci le tue credenziali Gmail:
+   ```
+   MAIL_USERNAME=tua-email@gmail.com
+   MAIL_PASSWORD=xxxx-xxxx-xxxx-xxxx
+   SECRET_KEY=tua-chiave-segreta
+   ```
+
+3. Per ottenere una **App Password Gmail**:
+   - Vai su [Account Google](https://accounts.google.com/signin/v2/identifier)
+   - Vai a **Sicurezza** nel menu a sinistra
+   - Abilita **Verifica in 2 passaggi** (se non già fatto)
+   - Torna a **Sicurezza** e seleziona **Password per le app**
+   - Seleziona "Mail" e "Windows/Linux" (o il tuo SO)
+   - Copia la password generata e incollala nel `.env` come `MAIL_PASSWORD`
+
+**Nota**: Non usare la tua password Gmail normale, usa solo la **App Password**.
+
+---
+
+## 🧪 Tecnologie utilizzate
 
 Dopo aver modificato i file di traduzione (.po) o i template con stringhe tradotte, ricompila i file .mo:
 

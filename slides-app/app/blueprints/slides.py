@@ -34,6 +34,9 @@ def modifica_slide(slide_id):
         title = request.form.get('title', '').strip()
         content = request.form.get('content', '').strip()
         bg_color = request.form.get('bg_color', '#ffffff').strip()
+        box_color = request.form.get('box_color', '').strip() or None
+        title_font_size = int(request.form.get('title_font_size', 48) or 48)
+        content_font_size = int(request.form.get('content_font_size', 20) or 20)
         remove_image = request.form.get('remove_image')
         image_file = request.files.get('image')
         if remove_image:
@@ -49,7 +52,7 @@ def modifica_slide(slide_id):
             flash(error, 'error')
         else:
             position = slide['position']
-            slide_repository.update_slide(slide_id, title, content, position, image_path, bg_color)
+            slide_repository.update_slide(slide_id, title, content, position, image_path, bg_color, box_color, title_font_size, content_font_size)
             if remove_image:
                 flash(_('Immagine rimossa.'), 'success')
                 return redirect(url_for('slides.modifica_slide', slide_id=slide_id))

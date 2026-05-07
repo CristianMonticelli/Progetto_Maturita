@@ -3,13 +3,17 @@ import sqlite3
 from flask import Flask
 from flask_mail import Mail
 from flask_babel import Babel, _
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
 
     app.config.from_mapping(
-        SECRET_KEY='dev',
+        SECRET_KEY=os.environ.get('SECRET_KEY', 'dev-key-change-in-production'),
         DATABASE=os.path.join(app.instance_path, 'slides.sqlite'),
         UPLOAD_FOLDER=os.path.join(app.root_path, 'static', 'uploads'),
         BABEL_DEFAULT_LOCALE='it',

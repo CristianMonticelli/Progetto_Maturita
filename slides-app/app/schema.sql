@@ -48,6 +48,9 @@ CREATE TABLE slides (
     position INTEGER DEFAULT 0,
     image TEXT,
     bg_color TEXT DEFAULT '#ffffff',
+    box_color TEXT DEFAULT NULL,
+    title_font_size INTEGER DEFAULT 48,
+    content_font_size INTEGER DEFAULT 20,
     FOREIGN KEY (presentation_id) REFERENCES presentations(id) ON DELETE CASCADE
 );
 
