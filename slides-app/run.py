@@ -1,3 +1,4 @@
+#!/home/monticelli/utile/io-6/.venv/bin/python3
 from app import create_app
 from random import randint
 app = create_app()

@@ -1,256 +1,678 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  <h2>{{ _('Modifica slide') }}</h2>
+<style>
+  .editor-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: -20px;
+  }
 
-  <form id="form-edit-slide" method="post" enctype="multipart/form-data" class="form-edit">
-    <div class="form-group">
-      <label for="title">{{ _('Titolo slide') }}</label>
-      <input type="text" id="title" name="title" value="{{ slide['title'] }}" required>
-    </div>
-    <div class="form-group">
-      <label for="content">{{ _('Contenuto slide') }}</label>
-      <textarea id="content" name="content" style="height:120px;">{{ slide['content'] }}</textarea>
+  /* Toolbar */
+  .ed-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: #111;
+    border-bottom: 2px solid #ff6600;
+    flex-wrap: wrap;
+  }
+  .ed-toolbar .sep {
+    width: 1px;
+    height: 28px;
+    background: #444;
+    margin: 0 4px;
+  }
+
+  /* Main area */
+  .ed-main {
+    display: flex;
+    height: 560px;
+  }
+
+  /* Canvas area */
+  .ed-canvas-area {
+    flex: 1;
+    background: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 16px;
+  }
+  .ed-canvas-wrap {
+    position: relative;
+    flex-shrink: 0;
+  }
+  /* Internal canvas: fixed 960x540, scaled with transform */
+  .slide-canvas {
+    width: 960px;
+    height: 540px;
+    position: relative;
+    transform-origin: top left;
+    overflow: hidden;
+    cursor: default;
+    user-select: none;
+    border: 2px solid #ff6600;
+    border-radius: 8px;
+    box-shadow: 0 4px 30px rgba(255,102,0,0.4);
+  }
+
+  /* Components inside canvas */
+  .comp-el {
+    position: absolute;
+    box-sizing: border-box;
+    cursor: move;
+    overflow: hidden;
+  }
+  .comp-el:hover:not(.comp-selected) {
+    outline: 1px dashed rgba(255,102,0,0.6);
+  }
+  .comp-selected {
+    outline: 2px solid #ff6600;
+    outline-offset: 0;
+  }
+
+  /* Resize handles */
+  .rh {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #ff6600;
+    border: 2px solid #fff;
+    border-radius: 2px;
+    z-index: 9999;
+  }
+  .rh-nw { top:-5px; left:-5px; cursor:nw-resize; }
+  .rh-n  { top:-5px; left:calc(50% - 5px); cursor:n-resize; }
+  .rh-ne { top:-5px; right:-5px; cursor:ne-resize; }
+  .rh-e  { top:calc(50% - 5px); right:-5px; cursor:e-resize; }
+  .rh-se { bottom:-5px; right:-5px; cursor:se-resize; }
+  .rh-s  { bottom:-5px; left:calc(50% - 5px); cursor:s-resize; }
+  .rh-sw { bottom:-5px; left:-5px; cursor:sw-resize; }
+  .rh-w  { top:calc(50% - 5px); left:-5px; cursor:w-resize; }
+
+  /* Properties panel */
+  .ed-props {
+    width: 270px;
+    background: #111;
+    border-left: 2px solid #333;
+    padding: 14px;
+    overflow-y: auto;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .ed-props .ph { color: #555; font-size: 0.85em; text-align: center; margin-top: 30px; line-height: 1.6; }
+  .prop-row { display: flex; flex-direction: column; gap: 4px; }
+  .prop-row label { font-size: 0.75em; color: #999; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .prop-row textarea,
+  .prop-row input[type=text] {
+    background: #222; border: 1px solid #444; border-radius: 6px;
+    color: #f0f0f0; padding: 7px 9px; font-size: 0.88em; font-family: inherit;
+    resize: vertical; width: 100%; box-sizing: border-box;
+  }
+  .prop-row input[type=range]  { width: 100%; accent-color: #ff6600; }
+  .prop-row input[type=color]  { width: 38px; height: 30px; border:none; border-radius:4px; cursor:pointer; padding:0; }
+  .prop-row .row2 { display: flex; align-items: center; gap: 8px; }
+  .prop-type-badge {
+    font-weight: 700; font-size: 0.95em; color: #ff6600;
+    padding: 4px 0 8px 0; border-bottom: 1px solid #333;
+  }
+
+  /* Add dropdown */
+  .add-wrap { position: relative; }
+  .add-menu {
+    display: none; position: absolute; top: calc(100% + 6px); left: 0;
+    background: #222; border: 1px solid #444; border-radius: 8px; overflow: hidden;
+    z-index: 200; min-width: 170px; box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+  }
+  .add-menu.open { display: block; }
+  .add-menu button {
+    display: block; width: 100%; padding: 9px 14px; background: none;
+    border: none; color: #f0f0f0; text-align: left; cursor: pointer;
+    font-size: 0.9em; transition: background 0.15s;
+  }
+  .add-menu button:hover { background: #333; }
+
+  /* Coord bar at bottom of canvas area */
+  .ed-coords {
+    font-size: 0.75em; color: #555; padding: 4px 16px;
+    background: #111; border-top: 1px solid #222;
+    font-family: monospace;
+  }
+</style>
+
+<div class="editor-wrap">
+  <!-- Toolbar -->
+  <div class="ed-toolbar">
+    <a href="{{ url_for('presentations.presentazione', id=slide['presentation_id']) }}"
+       class="btn btn-secondary" style="padding:7px 12px; font-size:0.88em;">← {{ _('Torna') }}</a>
+
+    <div class="sep"></div>
+
+    <label style="font-size:0.82em; color:#aaa;">{{ _('Sfondo:') }}</label>
+    <input type="color" id="bg-input" value="{{ slide['bg_color'] or '#ffffff' }}"
+           style="width:34px; height:30px; border:none; border-radius:4px; cursor:pointer; padding:0;">
+
+    <div class="sep"></div>
+
+    <div class="add-wrap">
+      <button class="btn" id="add-btn" style="padding:7px 13px; font-size:0.88em;">+ {{ _('Aggiungi') }} ▾</button>
+      <div class="add-menu" id="add-menu">
+        <button data-type="title">T&nbsp;&nbsp;{{ _('Titolo') }}</button>
+        <button data-type="text">¶&nbsp;&nbsp;{{ _('Testo') }}</button>
+        <button data-type="image">🖼&nbsp;&nbsp;{{ _('Immagine') }}</button>
+        <button data-type="link">🔗&nbsp;&nbsp;{{ _('Link') }}</button>
+      </div>
     </div>
 
-    <!-- Colore sfondo slide -->
-    <div class="form-group">
-      <label for="bg_color">{{ _('Colore sfondo slide') }}</label>
-      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-        <input type="color" id="bg_color" name="bg_color" value="{{ slide['bg_color'] or '#ffffff' }}"
-               style="width:60px; height:60px; border-radius:8px; cursor:pointer; border:2px solid #ff6600; padding:2px;">
-        <div id="bg_preview" style="padding:10px 18px; border-radius:8px; background:{{ slide['bg_color'] or '#ffffff' }}; font-weight:600; min-width:90px; text-align:center; transition:background 0.2s;">
-          {{ slide['bg_color'] or '#ffffff' }}
+    <button class="btn" id="save-btn"
+            style="margin-left:auto; background:#28a745; padding:7px 18px; font-size:0.88em;">
+      {{ _('Salva') }}
+    </button>
+  </div>
+
+  <!-- Editor main -->
+  <div class="ed-main">
+    <!-- Canvas -->
+    <div class="ed-canvas-area" id="canvas-area">
+      <div class="ed-canvas-wrap" id="canvas-wrap">
+        <div class="slide-canvas" id="slide-canvas"
+             style="background: {{ slide['bg_color'] or '#ffffff' }};">
         </div>
       </div>
     </div>
 
-    <!-- Dimensione font titolo -->
-    <div class="form-group">
-      <label for="title_font_size">{{ _('Dimensione testo titolo') }}: <span id="title_size_val">{{ slide['title_font_size'] or 48 }}</span>px</label>
-      <input type="range" id="title_font_size" name="title_font_size"
-             min="20" max="100" step="2" value="{{ slide['title_font_size'] or 48 }}"
-             style="width:100%; accent-color:#ff6600;">
-    </div>
+    <!-- Properties -->
+    <div class="ed-props" id="props-panel">
+      <div class="ph" id="props-empty">{{ _('Seleziona un elemento per modificarlo') }}</div>
+      <div id="props-body" style="display:none; flex-direction:column; gap:10px;">
 
-    <!-- Dimensione font contenuto -->
-    <div class="form-group">
-      <label for="content_font_size">{{ _('Dimensione testo contenuto') }}: <span id="content_size_val">{{ slide['content_font_size'] or 20 }}</span>px</label>
-      <input type="range" id="content_font_size" name="content_font_size"
-             min="10" max="60" step="2" value="{{ slide['content_font_size'] or 20 }}"
-             style="width:100%; accent-color:#ff6600;">
-    </div>
+        <div class="prop-type-badge" id="prop-type-label">Titolo</div>
 
-    <!-- Colore casella di testo -->
-    <div class="form-group">
-      <label>{{ _('Colore casella di testo') }}</label>
-      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:8px;">
-        <label style="display:flex; align-items:center; gap:8px; font-weight:normal; cursor:pointer;">
-          <input type="checkbox" id="box_transparent" {% if not slide['box_color'] %}checked{% endif %}
-                 style="width:18px; height:18px; cursor:pointer; accent-color:#ff6600;">
-          {{ _('Nessuno (trasparente, uguale allo sfondo)') }}
-        </label>
-      </div>
-      <div id="box_color_wrapper" style="display:{% if slide['box_color'] %}flex{% else %}none{% endif %}; align-items:center; gap:12px; flex-wrap:wrap;">
-        <input type="color" id="box_color_picker"
-               value="{{ slide['box_color'] or '#ffffff' }}"
-               style="width:60px; height:60px; border-radius:8px; cursor:pointer; border:2px solid #ff6600; padding:2px;">
-        <div id="box_preview" style="padding:10px 18px; border-radius:8px; background:{{ slide['box_color'] or '#ffffff' }}; font-weight:600; min-width:90px; text-align:center; transition:background 0.2s;">
-          {{ slide['box_color'] or '#ffffff' }}
+        <div class="prop-row" id="pr-content">
+          <label>{{ _('Contenuto') }}</label>
+          <textarea id="prop-content" rows="4" placeholder="{{ _('Scrivi qui...') }}"></textarea>
         </div>
-      </div>
-      <!-- hidden field inviato con il form -->
-      <input type="hidden" id="box_color" name="box_color" value="{{ slide['box_color'] or '' }}">
-    </div>
 
-    <!-- Anteprima slide -->
-    <div class="form-group">
-      <label>{{ _('Anteprima') }}</label>
-      <div id="slide_preview" style="
-        width:100%; max-width:500px; aspect-ratio:16/9;
-        border-radius:12px; display:flex; align-items:center; justify-content:center;
-        background:{{ slide['bg_color'] or '#ffffff' }};
-        border:2px solid #ff6600; overflow:hidden; position:relative; transition:background 0.2s;">
-        <div id="slide_text_preview" style="
-          {% if slide['box_color'] %}background:{{ slide['box_color'] }};{% endif %}
-          border-radius:10px; padding:16px 24px; text-align:center;
-          max-width:80%; transition:background 0.2s;">
-          <div id="preview_title" style="font-size:1.2em; font-weight:700; color:#ff6600; margin-bottom:8px;">{{ slide['title'] }}</div>
-          <div id="preview_content" style="font-size:0.9em; color:#333;">{{ slide['content'] or '' }}</div>
+        <div class="prop-row" id="pr-image" style="display:none;">
+          <label>{{ _('Immagine') }}</label>
+          <div id="prop-img-preview" style="margin-bottom:6px;"></div>
+          <div class="file-input-wrapper">
+            <span class="file-btn" style="font-size:0.82em; padding:8px 12px;">{{ _('Scegli immagine') }}</span>
+            <input type="file" id="prop-img-file" accept="image/*" class="file-input">
+          </div>
         </div>
+
+        <div class="prop-row" id="pr-fontsize">
+          <label>{{ _('Dimensione testo:') }} <span id="prop-fs-val">24</span>px</label>
+          <input type="range" id="prop-fs" min="8" max="120" step="2" value="24">
+        </div>
+
+        <div class="prop-row" id="pr-color">
+          <label>{{ _('Colore testo') }}</label>
+          <input type="color" id="prop-color" value="#333333">
+        </div>
+
+        <div class="prop-row">
+          <label>{{ _('Sfondo elemento') }}</label>
+          <div class="row2">
+            <label style="display:flex; align-items:center; gap:5px; font-weight:normal; color:#ddd; cursor:pointer; font-size:0.88em; text-transform:none; letter-spacing:0;">
+              <input type="checkbox" id="prop-bg-tr" checked style="accent-color:#ff6600;">
+              {{ _('Trasparente') }}
+            </label>
+            <input type="color" id="prop-bg-color" value="#ffffff" style="display:none;">
+          </div>
+        </div>
+
+        <div class="prop-row" style="border-top:1px solid #2a2a2a; padding-top:8px;">
+          <label>{{ _('Posizione / Dimensione') }}</label>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; font-size:0.8em; color:#666; font-family:monospace;">
+            <span>X: <span id="pi-x">0</span>%</span>
+            <span>Y: <span id="pi-y">0</span>%</span>
+            <span>W: <span id="pi-w">0</span>%</span>
+            <span>H: <span id="pi-h">0</span>%</span>
+          </div>
+        </div>
+
+        <button class="btn btn-danger" id="prop-del" style="padding:7px; font-size:0.88em;">
+          {{ _('Elimina elemento') }}
+        </button>
       </div>
     </div>
+  </div>
 
-    <div class="form-group">
-      <label for="image">{{ _('Immagine (opzionale)') }}</label>
-      <div class="file-input-wrapper">
-        <span class="file-btn">{{ _('Scegli foto') }}</span>
-        <input type="file" id="image" name="image" accept="image/*" class="file-input">
-      </div>
-      {% if slide['image'] %}
-      <div class="current-image">
-        <p>{{ _('Immagine attuale:') }}</p>
-        <img src="{{ slide['image'] }}" alt="Current image" style="max-width: 200px; max-height: 150px; border-radius: 8px;">
-        <button type="button" id="btn-remove-image" class="btn btn-danger" style="margin-top:10px;">{{ _('Rimuovi immagine') }}</button>
-      </div>
-      {% endif %}
-    </div>
-    <div class="action-row">
-      <button type="submit" class="btn">{{ _('Aggiorna') }}</button>
-      <a href="{{ url_for('presentations.presentazione', id=slide['presentation_id']) }}" class="btn btn-secondary">{{ _('Annulla') }}</a>
-    </div>
-  </form>
+  <div class="ed-coords" id="coords-bar">&nbsp;</div>
+</div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const slideId = {{ slide['id'] }};
-      const presentationId = {{ slide['presentation_id'] }};
-      const form = document.getElementById('form-edit-slide');
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const CANVAS_W = 960;
+  const CANVAS_H = 540;
 
-      const bgColorInput      = document.getElementById('bg_color');
-      const bgPreview         = document.getElementById('bg_preview');
-      const boxTransparent    = document.getElementById('box_transparent');
-      const boxColorWrapper   = document.getElementById('box_color_wrapper');
-      const boxColorPicker    = document.getElementById('box_color_picker');
-      const boxColorHidden    = document.getElementById('box_color');
-      const boxPreview        = document.getElementById('box_preview');
-      const slidePreview      = document.getElementById('slide_preview');
-      const slideTextPreview  = document.getElementById('slide_text_preview');
-      const previewTitle      = document.getElementById('preview_title');
-      const previewContent    = document.getElementById('preview_content');
-      const titleSizeInput    = document.getElementById('title_font_size');
-      const contentSizeInput  = document.getElementById('content_font_size');
-      const titleSizeVal      = document.getElementById('title_size_val');
-      const contentSizeVal    = document.getElementById('content_size_val');
+  const slideId        = {{ slide['id'] }};
+  const presentationId = {{ slide['presentation_id'] }};
+  const canvas         = document.getElementById('slide-canvas');
+  const canvasWrap     = document.getElementById('canvas-wrap');
+  const canvasArea     = document.getElementById('canvas-area');
 
-      function getContrastColor(hex) {
-        if (!hex || hex.length < 7) return '#333333';
-        const r = parseInt(hex.slice(1,3), 16);
-        const g = parseInt(hex.slice(3,5), 16);
-        const b = parseInt(hex.slice(5,7), 16);
-        return (0.299*r + 0.587*g + 0.114*b) / 255 > 0.5 ? '#1a1a1a' : '#f0f0f0';
+  // ── State ──────────────────────────────────────────────────────────────────
+  let components  = {{ components | tojson }};
+  let selectedId  = null;
+  let tempId      = -1;
+
+  let isDragging  = false;
+  let isResizing  = false;
+  let resizeDir   = '';
+  let dragOffPct  = { x: 0, y: 0 };
+  let resizeStart = {};   // { mouseX, mouseY, x, y, w, h }
+
+  // ── Canvas scaling ─────────────────────────────────────────────────────────
+  function scaleCanvas() {
+    const availW = canvasArea.clientWidth  - 32;
+    const availH = canvasArea.clientHeight - 32;
+    const scale  = Math.min(availW / CANVAS_W, availH / CANVAS_H);
+    canvas.style.transform = `scale(${scale})`;
+    canvasWrap.style.width  = (CANVAS_W * scale) + 'px';
+    canvasWrap.style.height = (CANVAS_H * scale) + 'px';
+  }
+  scaleCanvas();
+  window.addEventListener('resize', scaleCanvas);
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function esc(s) {
+    return String(s ?? '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/\n/g,'<br>');
+  }
+
+  // Mouse pos as % of canvas (accounts for CSS transform scale)
+  function mousePct(e) {
+    const r = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - r.left) / r.width  * 100,
+      y: (e.clientY - r.top)  / r.height * 100,
+    };
+  }
+
+  function round1(v) { return Math.round(v * 10) / 10; }
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+  function renderAll() {
+    canvas.innerHTML = '';
+    [...components].sort((a,b) => (a.z_index||0)-(b.z_index||0)).forEach(renderComp);
+  }
+
+  function renderComp(comp) {
+    const el = document.createElement('div');
+    el.className = 'comp-el' + (comp.id === selectedId ? ' comp-selected' : '');
+    el.dataset.id = comp.id;
+    el.style.cssText = [
+      `left:${comp.x}%`, `top:${comp.y}%`,
+      `width:${comp.width}%`, `height:${comp.height}%`,
+      `background:${(comp.bg_color && comp.bg_color !== 'transparent') ? comp.bg_color : 'transparent'}`,
+      'border-radius:4px', 'padding:4px 8px',
+    ].join(';');
+
+    if (comp.type === 'title') {
+      el.innerHTML = `<div style="font-size:${comp.font_size}px;font-weight:700;color:${comp.color};line-height:1.2;width:100%;height:100%;overflow:hidden;white-space:pre-wrap;">${esc(comp.content || 'Titolo')}</div>`;
+    } else if (comp.type === 'text') {
+      el.innerHTML = `<div style="font-size:${comp.font_size}px;color:${comp.color};line-height:1.5;width:100%;height:100%;overflow:hidden;white-space:pre-wrap;">${esc(comp.content || 'Testo')}</div>`;
+    } else if (comp.type === 'image') {
+      if (comp.image) {
+        el.innerHTML = `<img src="${comp.image}" style="width:100%;height:100%;object-fit:contain;border-radius:4px;pointer-events:none;">`;
+      } else {
+        el.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#e8e8e8;color:#888;font-size:13px;border-radius:4px;border:2px dashed #bbb;box-sizing:border-box;">📷 ${esc('{{ _("Seleziona immagine") }}')}</div>`;
       }
+    } else if (comp.type === 'link') {
+      el.innerHTML = `<div style="font-size:${comp.font_size}px;color:${comp.color};text-decoration:underline;line-height:1.4;width:100%;height:100%;overflow:hidden;white-space:nowrap;">${esc(comp.content || 'https://...')}</div>`;
+    }
 
-      function updateFontPreview() {
-        const ts = titleSizeInput.value;
-        const cs = contentSizeInput.value;
-        titleSizeVal.textContent = ts;
-        contentSizeVal.textContent = cs;
-        // scala i font nell'anteprima (l'anteprima è ~500px, la slide reale ~900px → fattore ~0.55)
-        previewTitle.style.fontSize = (ts * 0.55) + 'px';
-        previewContent.style.fontSize = (cs * 0.55) + 'px';
-      }
-
-      titleSizeInput.addEventListener('input', updateFontPreview);
-      contentSizeInput.addEventListener('input', updateFontPreview);
-
-      function updatePreview() {
-        const bg = bgColorInput.value;
-        const box = boxTransparent.checked ? null : boxColorPicker.value;
-
-        // Sfondo slide
-        slidePreview.style.background = bg;
-        bgPreview.textContent = bg;
-        bgPreview.style.background = bg;
-        bgPreview.style.color = getContrastColor(bg);
-
-        // Casella di testo
-        if (box) {
-          slideTextPreview.style.background = box;
-          slideTextPreview.style.boxShadow = '0 2px 12px rgba(0,0,0,0.18)';
-          boxPreview.textContent = box;
-          boxPreview.style.background = box;
-          boxPreview.style.color = getContrastColor(box);
-          const textColor = getContrastColor(box);
-          previewTitle.style.color = textColor === '#f0f0f0' ? '#ff9940' : '#cc4400';
-          previewContent.style.color = textColor;
-          boxColorHidden.value = box;
-        } else {
-          slideTextPreview.style.background = 'transparent';
-          slideTextPreview.style.boxShadow = 'none';
-          const textColor = getContrastColor(bg);
-          previewTitle.style.color = textColor === '#f0f0f0' ? '#ff9940' : '#cc4400';
-          previewContent.style.color = textColor;
-          boxColorHidden.value = '';
-        }
-
-        // Sync testo anteprima
-        previewTitle.textContent = document.getElementById('title').value || '{{ slide["title"] }}';
-        previewContent.textContent = document.getElementById('content').value || '';
-      }
-
-      bgColorInput.addEventListener('input', updatePreview);
-      boxColorPicker.addEventListener('input', updatePreview);
-      document.getElementById('title').addEventListener('input', updatePreview);
-      document.getElementById('content').addEventListener('input', updatePreview);
-
-      boxTransparent.addEventListener('change', function () {
-        if (this.checked) {
-          boxColorWrapper.style.display = 'none';
-          boxColorHidden.value = '';
-        } else {
-          boxColorWrapper.style.display = 'flex';
-          boxColorPicker.value = boxColorPicker.value || bgColorInput.value;
-          boxColorHidden.value = boxColorPicker.value;
-        }
-        updatePreview();
+    // Resize handles when selected
+    if (comp.id === selectedId) {
+      ['nw','n','ne','e','se','s','sw','w'].forEach(dir => {
+        const h = document.createElement('div');
+        h.className = `rh rh-${dir}`;
+        h.dataset.dir = dir;
+        el.appendChild(h);
       });
+    }
 
-      // Quando scelgo "personalizzato", inizializza col colore sfondo se non c'era un box_color
-      if (!boxTransparent.checked && !boxColorPicker.value) {
-        boxColorPicker.value = bgColorInput.value;
+    el.addEventListener('mousedown', onCompDown);
+    canvas.appendChild(el);
+  }
+
+  // ── Mouse events ──────────────────────────────────────────────────────────
+  function onCompDown(e) {
+    // Resize handle?
+    if (e.target.classList.contains('rh')) {
+      e.preventDefault();
+      e.stopPropagation();
+      const comp = getComp(+e.currentTarget.dataset.id);
+      if (!comp) return;
+      selectComp(comp.id);
+      isResizing = true;
+      resizeDir  = e.target.dataset.dir;
+      const mp   = mousePct(e);
+      resizeStart = { mx: mp.x, my: mp.y, x: comp.x, y: comp.y, w: comp.width, h: comp.height };
+      return;
+    }
+    // Drag
+    e.preventDefault();
+    e.stopPropagation();
+    const id   = +e.currentTarget.dataset.id;
+    selectComp(id);
+    const comp = getComp(id);
+    if (!comp) return;
+    const mp   = mousePct(e);
+    dragOffPct = { x: mp.x - comp.x, y: mp.y - comp.y };
+    isDragging = true;
+  }
+
+  canvas.addEventListener('mousedown', e => { if (e.target === canvas) deselectAll(); });
+
+  document.addEventListener('mousemove', e => {
+    if (!isDragging && !isResizing) return;
+    const mp   = mousePct(e);
+    const comp = getComp(selectedId);
+    if (!comp) return;
+    const el   = canvas.querySelector(`[data-id="${selectedId}"]`);
+
+    if (isDragging) {
+      comp.x = round1(clamp(mp.x - dragOffPct.x, 0, 100 - comp.width));
+      comp.y = round1(clamp(mp.y - dragOffPct.y, 0, 100 - comp.height));
+      if (el) { el.style.left = comp.x + '%'; el.style.top = comp.y + '%'; }
+      updatePosDisplay(comp);
+    }
+
+    if (isResizing) {
+      const dx = mp.x - resizeStart.mx;
+      const dy = mp.y - resizeStart.my;
+      const MIN = 5;
+      let {x, y, w, h} = resizeStart;
+
+      if (resizeDir.includes('e')) w = Math.max(MIN, resizeStart.w + dx);
+      if (resizeDir.includes('s')) h = Math.max(MIN, resizeStart.h + dy);
+      if (resizeDir.includes('w')) { w = Math.max(MIN, resizeStart.w - dx); x = resizeStart.x + resizeStart.w - w; }
+      if (resizeDir.includes('n')) { h = Math.max(MIN, resizeStart.h - dy); y = resizeStart.y + resizeStart.h - h; }
+
+      x = clamp(x, 0, 100); y = clamp(y, 0, 100);
+      w = Math.min(100 - x, w); h = Math.min(100 - y, h);
+
+      comp.x = round1(x); comp.y = round1(y);
+      comp.width = round1(w); comp.height = round1(h);
+
+      if (el) {
+        el.style.left = comp.x + '%'; el.style.top = comp.y + '%';
+        el.style.width = comp.width + '%'; el.style.height = comp.height + '%';
       }
+      updatePosDisplay(comp);
+    }
 
-      updateFontPreview();
-      updatePreview();
+    // coords bar
+    document.getElementById('coords-bar').textContent =
+      `X:${comp.x.toFixed(1)}%  Y:${comp.y.toFixed(1)}%  W:${comp.width.toFixed(1)}%  H:${comp.height.toFixed(1)}%`;
+  });
 
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        // Assicura che box_color_hidden sia aggiornato
-        if (!boxTransparent.checked) {
-          boxColorHidden.value = boxColorPicker.value;
-        } else {
-          boxColorHidden.value = '';
-        }
-        const formData = new FormData(form);
-        try {
-          await apiFetch(`/api/slides/${slideId}/update`, {
-            method: 'POST',
-            body: formData
-          });
-          showToast('{{ _("Slide aggiornata!") }}');
-          setTimeout(() => {
-            window.location.href = `/presentations/presentazione/${presentationId}`;
-          }, 1000);
-        } catch (error) {
-          if (!error.shouldReload) {
-            showToast('Errore nel salvataggio.', true);
-            console.error('Errore modifica slide:', error);
-          }
-        }
-      });
+  document.addEventListener('mouseup', () => {
+    if (isDragging || isResizing) {
+      isDragging = false;
+      isResizing = false;
+      renderAll();   // re-draw handles in final position
+    }
+  });
 
-      document.getElementById('btn-remove-image')?.addEventListener('click', async () => {
-        const formData = new FormData();
-        formData.append('remove_image', '1');
-        formData.append('title', document.getElementById('title').value);
-        formData.append('content', document.getElementById('content').value);
-        formData.append('bg_color', bgColorInput.value);
-        formData.append('box_color', boxColorHidden.value);
-        try {
-          await apiFetch(`/api/slides/${slideId}/update`, {
-            method: 'POST',
-            body: formData
-          });
-          document.querySelector('.current-image').remove();
-          showToast('{{ _("Immagine rimossa.") }}');
-        } catch (error) {
-          if (!error.shouldReload) {
-            showToast('Errore nel salvataggio.', true);
-            console.error('Errore modifica slide:', error);
-          }
-        }
-      });
+  // ── Selection ──────────────────────────────────────────────────────────────
+  function getComp(id) { return components.find(c => c.id === id) || null; }
+
+  function selectComp(id) {
+    selectedId = id;
+    renderAll();
+    updateProps();
+  }
+
+  function deselectAll() {
+    selectedId = null;
+    renderAll();
+    updateProps();
+  }
+
+  // ── Properties panel ──────────────────────────────────────────────────────
+  const propsEmpty   = document.getElementById('props-empty');
+  const propsBody    = document.getElementById('props-body');
+  const propTypeLabel= document.getElementById('prop-type-label');
+  const propContent  = document.getElementById('prop-content');
+  const prContent    = document.getElementById('pr-content');
+  const prImage      = document.getElementById('pr-image');
+  const prFontsize   = document.getElementById('pr-fontsize');
+  const prColor      = document.getElementById('pr-color');
+  const propFs       = document.getElementById('prop-fs');
+  const propFsVal    = document.getElementById('prop-fs-val');
+  const propColor    = document.getElementById('prop-color');
+  const propBgTr     = document.getElementById('prop-bg-tr');
+  const propBgColor  = document.getElementById('prop-bg-color');
+  const propImgPrev  = document.getElementById('prop-img-preview');
+  const propImgFile  = document.getElementById('prop-img-file');
+
+  function updatePosDisplay(comp) {
+    document.getElementById('pi-x').textContent = comp.x.toFixed(1);
+    document.getElementById('pi-y').textContent = comp.y.toFixed(1);
+    document.getElementById('pi-w').textContent = comp.width.toFixed(1);
+    document.getElementById('pi-h').textContent = comp.height.toFixed(1);
+  }
+
+  function updateProps() {
+    if (!selectedId) {
+      propsEmpty.style.display = 'block';
+      propsBody.style.display  = 'none';
+      return;
+    }
+    const comp = getComp(selectedId);
+    if (!comp) return;
+
+    propsEmpty.style.display = 'none';
+    propsBody.style.display  = 'flex';
+
+    const names = { title:'Titolo', text:'Testo', image:'Immagine', link:'Link' };
+    propTypeLabel.textContent = names[comp.type] || comp.type;
+
+    const isImg = comp.type === 'image';
+    prContent.style.display  = isImg ? 'none' : 'flex';
+    prImage.style.display    = isImg ? 'flex' : 'none';
+    prFontsize.style.display = isImg ? 'none' : 'flex';
+    prColor.style.display    = isImg ? 'none' : 'flex';
+
+    if (!isImg) {
+      propContent.value = comp.content || '';
+      propFs.value      = comp.font_size || 24;
+      propFsVal.textContent = comp.font_size || 24;
+      propColor.value   = comp.color || '#333333';
+    }
+
+    if (isImg && comp.image) {
+      propImgPrev.innerHTML = `<img src="${comp.image}" style="max-width:100%;max-height:70px;border-radius:4px;">`;
+    } else {
+      propImgPrev.innerHTML = '';
+    }
+
+    const isTransp = !comp.bg_color || comp.bg_color === 'transparent';
+    propBgTr.checked = isTransp;
+    propBgColor.style.display = isTransp ? 'none' : 'inline-block';
+    if (!isTransp) propBgColor.value = comp.bg_color;
+
+    updatePosDisplay(comp);
+  }
+
+  // Live property changes
+  propContent.addEventListener('input', () => {
+    const comp = getComp(selectedId);
+    if (!comp) return;
+    comp.content = propContent.value;
+    const inner = canvas.querySelector(`[data-id="${selectedId}"] div`);
+    if (inner) inner.innerHTML = esc(comp.content);
+  });
+
+  propFs.addEventListener('input', () => {
+    const v = +propFs.value;
+    propFsVal.textContent = v;
+    const comp = getComp(selectedId);
+    if (!comp) return;
+    comp.font_size = v;
+    const inner = canvas.querySelector(`[data-id="${selectedId}"] div`);
+    if (inner) inner.style.fontSize = v + 'px';
+  });
+
+  propColor.addEventListener('input', () => {
+    const comp = getComp(selectedId);
+    if (!comp) return;
+    comp.color = propColor.value;
+    const inner = canvas.querySelector(`[data-id="${selectedId}"] div`);
+    if (inner) inner.style.color = propColor.value;
+  });
+
+  propBgTr.addEventListener('change', () => {
+    const comp = getComp(selectedId);
+    if (!comp) return;
+    if (propBgTr.checked) {
+      comp.bg_color = 'transparent';
+      propBgColor.style.display = 'none';
+    } else {
+      propBgColor.style.display = 'inline-block';
+      comp.bg_color = propBgColor.value;
+    }
+    const el = canvas.querySelector(`[data-id="${selectedId}"]`);
+    if (el) el.style.background = comp.bg_color === 'transparent' ? 'transparent' : comp.bg_color;
+  });
+
+  propBgColor.addEventListener('input', () => {
+    const comp = getComp(selectedId);
+    if (!comp) return;
+    comp.bg_color = propBgColor.value;
+    const el = canvas.querySelector(`[data-id="${selectedId}"]`);
+    if (el) el.style.background = comp.bg_color;
+  });
+
+  document.getElementById('prop-del').addEventListener('click', () => {
+    if (selectedId === null) return;
+    components = components.filter(c => c.id !== selectedId);
+    selectedId = null;
+    renderAll();
+    updateProps();
+  });
+
+  // Image upload
+  propImgFile.addEventListener('change', async () => {
+    const comp = getComp(selectedId);
+    if (!comp || comp.type !== 'image' || !propImgFile.files[0]) return;
+    const fd = new FormData();
+    fd.append('image', propImgFile.files[0]);
+    try {
+      const res = await apiFetch(`/api/slides/${slideId}/upload_image`, { method:'POST', body: fd });
+      comp.image = res.path;
+      renderAll();
+      updateProps();
+    } catch { showToast('{{ _("Errore caricamento immagine") }}', true); }
+  });
+
+  // Background slide color
+  document.getElementById('bg-input').addEventListener('input', e => {
+    canvas.style.background = e.target.value;
+  });
+
+  // ── Add component dropdown ─────────────────────────────────────────────────
+  const addBtn  = document.getElementById('add-btn');
+  const addMenu = document.getElementById('add-menu');
+
+  addBtn.addEventListener('click', e => { e.stopPropagation(); addMenu.classList.toggle('open'); });
+  document.addEventListener('click', () => addMenu.classList.remove('open'));
+
+  const DEFAULTS = {
+    title: { content:'Titolo', x:5,  y:5,  width:90, height:18, font_size:48, color:'#ff6600', bg_color:'transparent', image:null },
+    text:  { content:'Testo',  x:5,  y:28, width:60, height:40, font_size:22, color:'#333333', bg_color:'transparent', image:null },
+    image: { content:'',       x:63, y:5,  width:32, height:60, font_size:0,  color:'#000000', bg_color:'transparent', image:null },
+    link:  { content:'https://esempio.com', x:5, y:75, width:50, height:10, font_size:18, color:'#0066cc', bg_color:'transparent', image:null },
+  };
+
+  addMenu.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const type = btn.dataset.type;
+      const comp = { id: tempId--, type, z_index: 0, ...DEFAULTS[type] };
+      components.push(comp);
+      selectComp(comp.id);
+      addMenu.classList.remove('open');
     });
-  </script>
+  });
+
+  // ── Keyboard shortcuts ─────────────────────────────────────────────────────
+  document.addEventListener('keydown', e => {
+    const tag = e.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+    if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId !== null) {
+      e.preventDefault();
+      components = components.filter(c => c.id !== selectedId);
+      selectedId = null;
+      renderAll(); updateProps();
+      return;
+    }
+    if (e.key === 'Escape') { deselectAll(); return; }
+
+    if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key) && selectedId !== null) {
+      e.preventDefault();
+      const comp = getComp(selectedId);
+      if (!comp) return;
+      const step = e.shiftKey ? 5 : 1;
+      if (e.key === 'ArrowLeft')  comp.x = clamp(comp.x - step, 0, 100 - comp.width);
+      if (e.key === 'ArrowRight') comp.x = clamp(comp.x + step, 0, 100 - comp.width);
+      if (e.key === 'ArrowUp')    comp.y = clamp(comp.y - step, 0, 100 - comp.height);
+      if (e.key === 'ArrowDown')  comp.y = clamp(comp.y + step, 0, 100 - comp.height);
+      comp.x = round1(comp.x); comp.y = round1(comp.y);
+      renderAll(); updatePosDisplay(comp);
+    }
+  });
+
+  // ── Save ──────────────────────────────────────────────────────────────────
+  document.getElementById('save-btn').addEventListener('click', async () => {
+    const data = {
+      bg_color: document.getElementById('bg-input').value,
+      components: components.map(c => ({
+        type:      c.type,
+        content:   c.content || '',
+        x:         c.x,
+        y:         c.y,
+        width:     c.width,
+        height:    c.height,
+        font_size: c.font_size || 0,
+        color:     c.color     || '#333333',
+        bg_color:  c.bg_color  || 'transparent',
+        z_index:   c.z_index   || 0,
+        image:     c.image     || null,
+      }))
+    };
+    try {
+      const res = await apiFetch(`/api/slides/${slideId}/components/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      // Update IDs from server response
+      components = res.components;
+      selectedId = null;
+      renderAll(); updateProps();
+      showToast('{{ _("Slide salvata!") }}');
+    } catch { showToast('{{ _("Errore nel salvataggio.") }}', true); }
+  });
+
+  // ── Initial render ─────────────────────────────────────────────────────────
+  renderAll();
+  updateProps();
+});
+</script>
 {% endblock %}

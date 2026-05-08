@@ -8,5 +8,6 @@ db_path = os.path.join('instance', 'slides.sqlite')
 connection = sqlite3.connect(db_path)
 with open('app/schema.sql', encoding='utf-8') as f:
     connection.executescript(f.read())
+connection.commit()
 connection.close()
-print(f"Database creato con successo in: {db_path}")
+print(f"Database creato in: {db_path}")
