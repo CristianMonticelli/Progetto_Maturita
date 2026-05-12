@@ -155,21 +155,6 @@ erDiagram
         int z_index
         string image
     }
-    TEMPLATE {
-        int id PK
-        string name
-    }
-    TEMPLATE_COMPONENT {
-        int id PK
-        int template_id FK
-        string type
-        float x
-        float y
-        float width
-        float height
-        int font_size
-        int z_index
-    }
     PASSWORD_RESET_TOKEN {
         int id PK
         int user_id FK
