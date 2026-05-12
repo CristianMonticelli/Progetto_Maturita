@@ -6,18 +6,15 @@ Visitatore <|-- Utente
 
 Visitatore --> (Visualizza elenco presentazioni)
 Visitatore --> (Visualizza presentazione)
+Visitatore --> (Autenticazione utente)
 
-Utente --> (Registrazione utente)
-Utente --> (Autenticazione utente)
 Utente --> (Crea presentazione)
 Utente --> (Aggiungi slide)
 Utente --> (Aggiungi immagine)
 Utente --> (Modifica slide)
 
-(Crea presentazione) .> (Verifica autenticazione) : <<include>>
-(Aggiungi slide) .> (Verifica autenticazione) : <<include>>
-(Modifica slide) .> (Verifica autenticazione) : <<include>>
 
+(Visualizza presentazione) .> (Visualizza elenco presentazioni) : <<extend>>
 (Aggiungi slide) .> (Visualizza presentazione) : <<extend>>
 @enduml
 

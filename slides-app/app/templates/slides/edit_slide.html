@@ -2,11 +2,22 @@
 
 {% block content %}
 <style>
+  /* Full-viewport editor: hide decorative header, fill screen */
+  body { overflow: hidden !important; }
+  header { display: none !important; }
+  .container { padding: 0 !important; max-width: 100% !important; height: 100vh !important;
+               display: flex !important; flex-direction: column !important; }
+  .card { flex: 1 !important; border-radius: 0 !important; display: flex !important;
+          flex-direction: column !important; overflow: hidden !important; min-height: 0 !important; }
+  .content-wrap { flex: 1 !important; padding: 0 !important; display: flex !important;
+                  flex-direction: column !important; overflow: hidden !important; min-height: 0 !important; }
+
   .editor-wrap {
     display: flex;
     flex-direction: column;
-    gap: 0;
-    margin: -20px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
   }
 
   /* Toolbar */
@@ -29,12 +40,14 @@
   /* Main area */
   .ed-main {
     display: flex;
-    height: 560px;
+    flex: 1;
+    min-height: 0;
   }
 
   /* Canvas area */
   .ed-canvas-area {
     flex: 1;
+    min-height: 0;
     background: #1a1a1a;
     display: flex;
     align-items: center;
@@ -102,6 +115,7 @@
     padding: 14px;
     overflow-y: auto;
     flex-shrink: 0;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: 10px;

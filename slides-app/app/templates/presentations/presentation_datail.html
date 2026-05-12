@@ -2,29 +2,43 @@
 
 {% block content %}
 <style>
-  .slide-preview-canvas {
+  /* Outer: mantiene il rapporto 16:9 con il trucco padding-bottom */
+  .slide-preview-outer {
     position: relative;
     width: 100%;
-    padding-bottom: 56.25%; /* 16:9 */
+    padding-bottom: 56.25%;
     overflow: hidden;
     border-radius: 8px;
     border: 2px solid #ff6600;
-    background: #fff;
-    margin-bottom: 0;
+    cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
+    margin-bottom: 0;
   }
-  .slide-preview-canvas:hover { transform: translateY(-3px); box-shadow: 0 6px 24px rgba(255,102,0,0.35); }
-  .slide-preview-canvas .comp-prev {
+  .slide-preview-outer:hover { transform: translateY(-3px); box-shadow: 0 6px 24px rgba(255,102,0,0.35); }
+
+  /* Inner: il canvas reale 960×540, scalato via JS esattamente come nell'editor e nel presenta */
+  .slide-preview-inner {
+    position: absolute;
+    top: 0; left: 0;
+    width: 960px;
+    height: 540px;
+    transform-origin: top left;
+  }
+
+  /* Componenti: stessa struttura del presenta */
+  .sp-comp {
     position: absolute;
     box-sizing: border-box;
     overflow: hidden;
-    padding: 2px 4px;
+    padding: 4px 8px;
   }
+
   .slide-number-badge {
     position: absolute; top: 6px; left: 6px; z-index: 10;
     background: rgba(255,102,0,0.85); color:#fff;
     font-size: 0.65em; font-weight: 700;
     padding: 2px 8px; border-radius: 10px;
+    pointer-events: none;
   }
 </style>
 
@@ -39,35 +53,38 @@
   </a>
 </div>
 
-<!-- Slides grid -->
+<!-- Slides in colonna -->
 <div class="ppt-container">
   <div id="slides-container">
     {% for slide in slides %}
     <div class="slide-group" data-slide-id="{{ slide['id'] }}">
 
-      <!-- Preview -->
-      <div class="slide-preview-canvas" style="background: {{ slide['bg_color'] or '#ffffff' }};">
+      <!-- Preview: stesso canvas 960×540 scalato di editor e presenta -->
+      <div class="slide-preview-outer"
+           onclick="window.location='{{ url_for('slides.modifica_slide', slide_id=slide['id']) }}'">
         <span class="slide-number-badge">{{ loop.index }}</span>
-        {% for comp in slide['components'] %}
-          <div class="comp-prev" style="
-            left:{{ comp['x'] }}%; top:{{ comp['y'] }}%;
-            width:{{ comp['width'] }}%; height:{{ comp['height'] }}%;
-            {% if comp['bg_color'] and comp['bg_color'] != 'transparent' %}background:{{ comp['bg_color'] }};{% endif %}
-            {% if comp['type'] == 'title' %}font-weight:bold;{% endif %}
-            color:{{ comp['color'] or '#333' }};
-            font-size: clamp(6px, {{ comp['font_size'] * 0.25 }}px, 14px);
-            line-height:1.3; border-radius:3px;
-          ">
-            {% if comp['type'] == 'image' and comp['image'] %}
-              <img src="{{ comp['image'] }}" style="width:100%;height:100%;object-fit:contain;">
-            {% else %}
-              {{ comp['content'] or '' }}
-            {% endif %}
-          </div>
-        {% endfor %}
-        {% if not slide['components'] %}
-          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:0.8em;">{{ _('Nessun elemento') }}</div>
-        {% endif %}
+        <div class="slide-preview-inner" style="background: {{ slide['bg_color'] or '#ffffff' }};">
+          {% for comp in slide['components'] %}
+            <div class="sp-comp" style="
+              left:{{ comp['x'] }}%; top:{{ comp['y'] }}%;
+              width:{{ comp['width'] }}%; height:{{ comp['height'] }}%;
+              {% if comp['bg_color'] and comp['bg_color'] != 'transparent' %}background:{{ comp['bg_color'] }};border-radius:4px;{% endif %}
+            ">
+              {% if comp['type'] == 'image' and comp['image'] %}
+                <img src="{{ comp['image'] }}" style="width:100%;height:100%;object-fit:contain;border-radius:4px;pointer-events:none;">
+              {% elif comp['type'] == 'title' %}
+                <div style="font-size:{{ comp['font_size'] or 48 }}px;font-weight:700;color:{{ comp['color'] or '#ff6600' }};line-height:1.2;white-space:pre-wrap;width:100%;height:100%;overflow:hidden;">{{ comp['content'] or '' }}</div>
+              {% elif comp['type'] == 'text' %}
+                <div style="font-size:{{ comp['font_size'] or 22 }}px;color:{{ comp['color'] or '#333333' }};line-height:1.5;white-space:pre-wrap;width:100%;height:100%;overflow:hidden;">{{ comp['content'] or '' }}</div>
+              {% elif comp['type'] == 'link' %}
+                <div style="font-size:{{ comp['font_size'] or 18 }}px;color:{{ comp['color'] or '#0066cc' }};text-decoration:underline;line-height:1.4;white-space:nowrap;width:100%;height:100%;overflow:hidden;">{{ comp['content'] or '' }}</div>
+              {% endif %}
+            </div>
+          {% endfor %}
+          {% if not slide['components'] %}
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:1em;">{{ _('Nessun elemento') }}</div>
+          {% endif %}
+        </div>
       </div>
 
       <!-- Controls -->
@@ -100,6 +117,18 @@
 </div>
 
 <script>
+// Scala ogni preview inner al 960×540 reale, identico all'editor e al presenta
+function scalePreviews() {
+  document.querySelectorAll('.slide-preview-outer').forEach(outer => {
+    const inner = outer.querySelector('.slide-preview-inner');
+    if (!inner) return;
+    const scale = outer.clientWidth / 960;
+    inner.style.transform = `scale(${scale})`;
+  });
+}
+scalePreviews();
+window.addEventListener('resize', scalePreviews);
+
 document.addEventListener('DOMContentLoaded', () => {
   const presentationId = {{ presentazione['id'] }};
   const container = document.getElementById('slides-container');
@@ -119,6 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const index = container.querySelectorAll('.slide-group').length + 1;
       const slide = res.slide;
       container.insertAdjacentHTML('beforeend', buildSlideHtml(slide, index));
+      scalePreviews();
       showToast('{{ _("Slide aggiunta!") }}');
     } catch {}
   });
@@ -126,9 +156,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function buildSlideHtml(slide, index) {
     return `
       <div class="slide-group" data-slide-id="${slide.id}">
-        <div class="slide-preview-canvas" style="background:${slide.bg_color || '#ffffff'};">
+        <div class="slide-preview-outer" onclick="window.location='/slides/${slide.id}/modifica'">
           <span class="slide-number-badge">${index}</span>
-          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:0.8em;">{{ _('Nessun elemento') }}</div>
+          <div class="slide-preview-inner" style="background:${slide.bg_color || '#ffffff'};">
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:1em;">{{ _('Nessun elemento') }}</div>
+          </div>
         </div>
         <div class="ppt-slide-controls">
           <a href="/slides/${slide.id}/modifica" class="btn btn-secondary">{{ _('Modifica slide') }}</a>
@@ -139,12 +171,13 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>`;
   }
 
-  // Move up / down → reload page for simplicity (slide order resets)
+  // Move up / down
   container.addEventListener('click', async e => {
     const up   = e.target.classList.contains('move-slide-up');
     const down = e.target.classList.contains('move-slide-down');
     if (!up && !down) return;
     e.preventDefault();
+    e.stopPropagation();
     const slideId = e.target.dataset.slideId;
     try {
       await apiFetch(`/api/slides/${slideId}/${up ? 'move_up' : 'move_down'}`, { method: 'POST' });
@@ -155,6 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Delete slide
   container.addEventListener('click', async e => {
     if (!e.target.classList.contains('delete-slide')) return;
+    e.stopPropagation();
     const slideId = e.target.dataset.slideId;
     if (!confirm('{{ _("Eliminare questa slide?") }}')) return;
     try {
