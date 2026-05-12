@@ -4,6 +4,7 @@ from flask import (
 )
 from flask_babel import _
 from flask_mail import Message
+from app import mail
 # werkzeug.security ci offre strumenti professionali per la crittografia
 from werkzeug.security import check_password_hash, generate_password_hash
 from app.repositories import user_repository
@@ -67,6 +68,8 @@ def register():
             error = _('Email obbligatoria.')
         elif '@' not in email or '.' not in email:
             error = _('Inserisci un indirizzo email valido.')
+        elif user_repository.get_user_by_email(email):
+            error = _('Email già in uso da un altro account.')
 
         if error is None:
             # Hashiamo la password (MAI salvarla in chiaro!)
@@ -137,8 +140,9 @@ def forgot_password():
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
         user = user_repository.get_user_by_email(email)
-        # Sempre mostrare il messaggio generico per sicurezza
-        flash(_('Se l\'email è registrata, riceverai un link per il reset.'), 'success')
+        if not user:
+            flash(_('Nessun account trovato con questa email.'), 'error')
+            return render_template('auth/forgot_password.html')
         if user:
             import secrets
             from datetime import datetime, timedelta
@@ -147,23 +151,20 @@ def forgot_password():
             user_repository.save_reset_token(user['id'], token, expires_at)
             reset_url = url_for('auth.reset_password', token=token, _external=True)
             # Invia un'email reale con Flask-Mail
-            mail = current_app.extensions.get('mail')
-            if mail:
-                try:
-                    msg = Message(
-                        subject='Reset password - SlidesApp',
-                        recipients=[email],
-                        body=f'Per reimpostare la password usa questo link:\n\n{reset_url}'
-                    )
-                    mail.send(msg)
-                except Exception as e:
-                    import traceback
-                    current_app.logger.error(
-                        f'Errore invio email reset password a {email}: {e}\n'
-                        f'{traceback.format_exc()}'
-                    )
-            else:
-                current_app.logger.warning('Flask-Mail non è configurato. Password reset link generato ma non inviato.')
+            try:
+                msg = Message(
+                    subject='Reset password - SlidesApp',
+                    recipients=[email],
+                    body=f'Per reimpostare la password usa questo link:\n\n{reset_url}'
+                )
+                mail.send(msg)
+            except Exception as e:
+                import traceback
+                current_app.logger.error(
+                    f'Errore invio email reset password a {email}: {e}\n'
+                    f'{traceback.format_exc()}'
+                )
+            flash(_('Email di reset inviata! Controlla la tua casella di posta.'), 'success')
         return redirect(url_for('auth.login'))
     return render_template('auth/forgot_password.html')
 

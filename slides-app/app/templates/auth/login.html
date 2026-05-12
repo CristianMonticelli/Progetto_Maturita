@@ -23,14 +23,19 @@
             
             <div class="form-group">
                 <label for="password">🔐 {{ _('Password') }}</label>
-                <input 
-                    type="password"
-                    name="password" 
-                    id="password" 
-                    required
-                    placeholder="{{ _('Inserisci la tua password') }}"
-                    autocomplete="current-password"
-                >
+                <div style="position:relative;">
+                    <input
+                        type="password"
+                        name="password"
+                        id="password"
+                        required
+                        placeholder="{{ _('Inserisci la tua password') }}"
+                        autocomplete="current-password"
+                        style="padding-right:42px; width:100%; box-sizing:border-box;"
+                    >
+                    <button type="button" onclick="togglePwd('password',this)"
+                            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#aaa;font-size:1.2rem;padding:0;">👁️</button>
+                </div>
             </div>
             
             <button type="submit" class="btn" style="width: 100%; font-size: 1.1rem; padding: 15px;">
@@ -54,4 +59,11 @@
         </p>
     </div>
 </div>
+<script>
+function togglePwd(id, btn) {
+    const inp = document.getElementById(id);
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    btn.style.color = inp.type === 'text' ? '#ff6600' : '#aaa';
+}
+</script>
 {% endblock %}

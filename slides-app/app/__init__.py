@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+mail = Mail()
+
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
@@ -20,6 +22,7 @@ def create_app():
         MAIL_SERVER='smtp.gmail.com',
         MAIL_PORT=587,
         MAIL_USE_TLS=True,
+        MAIL_DEBUG=False,
         MAIL_USERNAME=os.environ.get('MAIL_USERNAME', ''),
         MAIL_PASSWORD=os.environ.get('MAIL_PASSWORD', ''),
         MAIL_DEFAULT_SENDER=os.environ.get('MAIL_USERNAME', 'noreply@slidesapp.local'),
@@ -27,10 +30,7 @@ def create_app():
         BABEL_TRANSLATION_DIRECTORIES='translations',
     )
 
-    mail = Mail()
     mail.init_app(app)
-    app.extensions = getattr(app, 'extensions', {})
-    app.extensions['mail'] = mail
     # Flask-Babel setup
     babel = Babel()
     def get_locale():
