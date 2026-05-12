@@ -108,7 +108,6 @@ SlidesApp è un'applicazione web per creare e gestire presentazioni a diapositiv
 - `Slide`: singola diapositiva di una presentazione, caratterizzata da `position` e `bg_color`; contiene componenti.
 - `Componente`: elemento posizionabile liberamente su una slide. Tipi: `title`, `text`, `image`, `link`.
 - `Canvas`: area di editing di 960×540 px (proporzioni 16:9) scalata via CSS transform per adattarsi allo schermo.
-- `Template`: layout predefinito ("Vuota", "Titolo + Testo") che precompila una slide con componenti iniziali. Colonna `name` nel DB.
 - `Password Reset Token`: token monouso con scadenza 1 ora, salvato nella tabella `password_reset_tokens`, usato per il reset della password via email.
 - `OTP Token`: token one-time-password salvato nella tabella `otp_tokens`, usato per autenticazione a due fattori.
 - `Utente`: account registrato che può gestire le proprie presentazioni. La password è salvata hashata nel campo `password`.
@@ -173,7 +172,6 @@ erDiagram
     UTENTE ||--o{ PRESENTAZIONE : crea
     PRESENTAZIONE ||--o{ SLIDE : contiene
     SLIDE ||--o{ SLIDE_COMPONENT : ha
-    TEMPLATE ||--o{ TEMPLATE_COMPONENT : definisce
     UTENTE ||--o{ PASSWORD_RESET_TOKEN : richiede
     UTENTE ||--o{ OTP_TOKEN : genera
 ```
@@ -217,21 +215,6 @@ classDiagram
         +string bg_color
         +int z_index
         +string image
-    }
-    class Template {
-        +int id
-        +string name
-    }
-    class TemplateComponent {
-        +int id
-        +int template_id
-        +string type
-        +float x
-        +float y
-        +float width
-        +float height
-        +int font_size
-        +int z_index
     }
     class PasswordResetToken {
         +int id
@@ -284,14 +267,9 @@ classDiagram
         +get_components_by_slide(slide_id)
         +save_all_components(slide_id, components)
     }
-    class TemplateRepository {
-        +get_templates()
-    }
-
     Utente "1" -- "*" Presentazione : crea
     Presentazione "1" -- "*" Slide : contiene
     Slide "1" -- "*" SlideComponent : ha
-    Template "1" -- "*" TemplateComponent : definisce
     Utente "1" -- "*" PasswordResetToken : richiede
     Utente "1" -- "*" OtpToken : genera
 ```
