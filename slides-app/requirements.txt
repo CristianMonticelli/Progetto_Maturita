@@ -1,4 +1,5 @@
 alembic==1.16.5
+python-pptx>=0.6.23
 attrs==20.3.0
 babel==2.18.0
 blinker==1.9.0

@@ -2,8 +2,6 @@
 
 > Questo documento descrive i requisiti per il progetto **SlidesApp**, un'applicazione web per la creazione e la gestione di presentazioni digitali con editor canvas visuale.
 
----
-
 ## 1. Introduzione
 
 ### 1.1 Scopo del documento
@@ -31,8 +29,6 @@ Tema scelto: **SlidesApp**.
 
 SlidesApp è uno strumento web per creare, gestire e visualizzare presentazioni digitali composte da slide. Ogni slide è un canvas visuale su cui l'utente posiziona liberamente componenti di tipo titolo, testo, immagine o link, trascinandoli e ridimensionandoli con il mouse. Le slide sono ordinate all'interno di ogni presentazione e possono essere riorganizzate. Il sistema supporta più lingue (italiano, inglese, spagnolo) tramite Flask-Babel e offre interazioni dinamiche senza ricaricamento della pagina grazie ad AJAX.
 
----
-
 ## 2. Obiettivi generali
 
 - Permettere a un utente di registrarsi e autenticarsi in modo sicuro, con possibilità di attivare l'autenticazione a due fattori (MFA) e di recuperare la password via email.
@@ -42,8 +38,6 @@ SlidesApp è uno strumento web per creare, gestire e visualizzare presentazioni 
 - Permettere la personalizzazione visiva di ogni componente: dimensione testo, colore, sfondo, immagine.
 - Offrire interazioni fluide tramite AJAX, senza ricaricare l'intera pagina ad ogni operazione.
 - Supportare più lingue dell'interfaccia (italiano, inglese, spagnolo) con un selettore sempre visibile nella barra di navigazione.
-
----
 
 ## 3. Stakeholder e attori
 
@@ -57,8 +51,6 @@ SlidesApp è uno strumento web per creare, gestire e visualizzare presentazioni 
 
 - `Visitatore`: utente non autenticato; può accedere alle pagine di login e registrazione.
 - `Utente`: account autenticato; specializzazione di Visitatore. Può creare e gestire presentazioni, slide e componenti propri, e configurare la sicurezza del proprio account.
-
----
 
 ## 4. Requisiti funzionali
 
@@ -99,8 +91,6 @@ SlidesApp è uno strumento web per creare, gestire e visualizzare presentazioni 
 - Come **utente autenticato**, voglio eliminare slide o intere presentazioni con un semplice clic.
 - Come **utente**, voglio cambiare la lingua dell'interfaccia (italiano, inglese, spagnolo) in qualsiasi momento tramite il menu a bandiere in alto a destra.
 
----
-
 ## 5. Requisiti non funzionali
 
 - **Usabilità**: l'interfaccia deve essere intuitiva; le operazioni principali devono avvenire senza cambi di pagina grazie ad AJAX; l'editor canvas deve rispondere in tempo reale al mouse senza ritardi visibili.
@@ -112,127 +102,7 @@ SlidesApp è uno strumento web per creare, gestire e visualizzare presentazioni 
 - **Robustezza**: l'app gestisce errori comuni (form non validi, file mancanti, ID inesistenti) restituendo messaggi chiari tramite flash messages categorizzati (`success` / `error`) o risposte JSON con campo `ok`.
 - **Documentazione**: il `README.md` include istruzioni per installazione, esecuzione e compilazione delle traduzioni.
 
----
-
-## 6. Casi d'uso
-
-### 6.1 Casi d'uso essenziali
-
-1. Registrazione utente
-2. Login
-3. Verifica MFA (secondo fattore)
-4. Configurazione MFA (TOTP o email)
-5. Reset password via email
-6. Creare presentazione
-7. Visualizzare elenco presentazioni
-8. Aprire dettaglio presentazione
-9. Aggiungere slide
-10. Riordinare slide (sposta su / sposta giù)
-11. Eliminare slide
-12. Eliminare presentazione
-13. Aprire editor canvas di una slide
-14. Aggiungere componente alla slide (titolo / testo / immagine / link)
-15. Spostare componente con drag & drop
-16. Ridimensionare componente
-17. Modificare proprietà componente
-18. Eliminare componente
-19. Salvare il canvas
-20. Cambiare lingua interfaccia
-
-### 6.2 Descrizione semplificata dei casi d'uso
-
-- **Registrazione**: il visitatore inserisce username, email e password; il sistema salva l'account con password hashata e reindirizza al login.
-- **Login**: l'utente inserisce le credenziali; il sistema verifica l'hash della password. Se l'utente ha MFA attivo, viene reindirizzato alla verifica del secondo fattore prima di accedere.
-- **Verifica MFA**: l'utente inserisce il codice a 6 cifre generato dall'app authenticator (TOTP) oppure ricevuto via email (OTP); solo dopo la verifica la sessione viene aperta.
-- **Reset password**: l'utente inserisce la propria email; il sistema invia un link con token monouso; cliccando il link l'utente imposta una nuova password.
-- **Creare presentazione**: l'utente compila il form con titolo e descrizione; la presentazione viene creata tramite AJAX e appare nella lista senza ricaricare la pagina.
-- **Aggiungere slide**: dall'interno di una presentazione, l'utente clicca "Aggiungi slide"; il sistema crea una slide vuota con sfondo bianco e la aggiunge in coda tramite AJAX.
-- **Riordinare slide**: l'utente clicca "Sposta su" o "Sposta giù"; una chiamata AJAX aggiorna le posizioni nel DB e ridisegna l'elenco delle slide nel DOM.
-- **Aprire editor canvas**: l'utente clicca "Modifica" su una slide; viene caricata la pagina dell'editor con il canvas (960×540 px, scalato via CSS transform) e il pannello proprietà laterale.
-- **Aggiungere componente**: l'utente apre il menu "+ Aggiungi" e sceglie il tipo (titolo, testo, immagine, link); il componente appare sul canvas con dimensioni e posizione predefinite.
-- **Spostare componente**: l'utente clicca e trascina il componente; la posizione viene aggiornata in percentuale in tempo reale senza chiamate al server.
-- **Ridimensionare componente**: l'utente trascina uno degli 8 handle colorati attorno al componente selezionato; larghezza e altezza vengono aggiornate in percentuale.
-- **Modificare proprietà**: l'utente seleziona un componente; nel pannello laterale modifica testo, dimensione font, colore o sfondo; le modifiche sono visibili immediatamente sul canvas.
-- **Salvare il canvas**: l'utente clicca "Salva"; una chiamata AJAX invia tutti i componenti con le loro proprietà all'API, che li salva nel database.
-- **Cambiare lingua**: l'utente clicca la bandiera desiderata nel menu a tendina in alto a destra; la lingua viene salvata in sessione e applicata a tutta l'interfaccia.
-
-### 6.3 Relazioni tra casi d'uso: include ed extend
-
-In un diagramma dei casi d'uso si usano due tipi di relazioni aggiuntive:
-
-- `<<include>>`: rappresenta un comportamento obbligatorio e riutilizzabile. Un caso d'uso base include un altro quando quel comportamento viene sempre eseguito.
-- `<<extend>>`: rappresenta un comportamento opzionale o condizionale che si aggiunge al caso d'uso base solo in certe situazioni.
-
-I casi d'uso non devono essere confusi con i rapporti tra attori. In SlidesApp, `Utente` è una specializzazione di `Visitatore`: l'utente può fare tutto ciò che può fare un visitatore, più alcune azioni riservate. Questo si modella con una generalizzazione tra attori:
-
-```
-   Visitatore
-       ^
-       |
-     Utente
-```
-
-Relazioni `<<include>>` — la verifica dell'autenticazione è un passaggio obbligatorio per tutte le azioni che modificano i dati:
-
-- `Crea presentazione` <<include>> `Verifica autenticazione`
-- `Aggiungi slide` <<include>> `Verifica autenticazione`
-- `Elimina slide` <<include>> `Verifica autenticazione`
-- `Elimina presentazione` <<include>> `Verifica autenticazione`
-- `Apri editor canvas` <<include>> `Verifica autenticazione`
-- `Salva canvas` <<include>> `Verifica autenticazione`
-
-Relazioni `<<extend>>` — comportamenti opzionali che si attivano solo in certe condizioni:
-
-- `Verifica MFA` <<extend>> `Login`: il sistema chiede il codice MFA solo se l'utente lo ha attivato.
-- `Reset password` <<extend>> `Login`: l'utente può richiedere il reset password solo dalla pagina di login, quando non ricorda le credenziali.
-- `Upload immagine` <<extend>> `Modifica proprietà componente`: il caricamento dell'immagine è disponibile solo quando il componente selezionato è di tipo immagine.
-
-### 6.4 Diagramma dei casi d'uso
-
-```plantuml
-@startuml casi_uso_slidesapp
-left to right direction
-actor Visitatore
-actor Utente
-Visitatore <|-- Utente
-
-Visitatore --> (Registrazione utente)
-Visitatore --> (Login)
-
-Utente --> (Logout)
-Utente --> (Configura MFA)
-Utente --> (Crea presentazione)
-Utente --> (Visualizza elenco presentazioni)
-Utente --> (Apri dettaglio presentazione)
-Utente --> (Aggiungi slide)
-Utente --> (Riordina slide)
-Utente --> (Elimina slide)
-Utente --> (Elimina presentazione)
-Utente --> (Apri editor canvas)
-Utente --> (Aggiungi componente)
-Utente --> (Sposta componente)
-Utente --> (Ridimensiona componente)
-Utente --> (Modifica proprietà componente)
-Utente --> (Elimina componente)
-Utente --> (Salva canvas)
-Utente --> (Cambia lingua)
-
-(Crea presentazione) .> (Verifica autenticazione) : <<include>>
-(Aggiungi slide) .> (Verifica autenticazione) : <<include>>
-(Elimina slide) .> (Verifica autenticazione) : <<include>>
-(Elimina presentazione) .> (Verifica autenticazione) : <<include>>
-(Apri editor canvas) .> (Verifica autenticazione) : <<include>>
-(Salva canvas) .> (Verifica autenticazione) : <<include>>
-
-(Verifica MFA) .> (Login) : <<extend>>
-(Reset password) .> (Login) : <<extend>>
-(Upload immagine) .> (Modifica proprietà componente) : <<extend>>
-@enduml
-```
-
----
-
-## 7. Glossario dei termini
+## 6. Glossario dei termini
 
 - `Presentazione`: raccolta ordinata di slide con attributi `id`, `title`, `description`, `author_id`, `created_at`.
 - `Slide`: canvas visuale di una presentazione con attributi `id`, `presentation_id`, `position`, `bg_color`. Non contiene testo direttamente: il contenuto è affidato ai componenti.
@@ -242,50 +112,7 @@ Utente --> (Cambia lingua)
 - `Token OTP`: codice temporaneo inviato via email per la verifica MFA, con scadenza e flag `used`.
 - `Token reset password`: link monouso inviato via email per il reset della password, con scadenza e flag `used`.
 
----
-
-## 8. Pianificazione e milestone
-
-Questa sezione descrive la sequenza di lavoro del progetto, con tre fasi principali:
-
-- **Analisi**: definire i requisiti, i casi d'uso e i modelli concettuali.
-- **Sviluppo**: realizzare le funzionalità principali, l'interfaccia e la gestione dati.
-- **Rifinitura**: testare, correggere e preparare la consegna.
-
-Nella fase di analisi si producono gli schemi ER e UML; questi documenti aiutano a progettare il database e le classi prima di scrivere il codice.
-
-| Settimana | Attività |
-| --- | --- |
-| 1 | Analisi dei requisiti, schema ER e UML, setup ambiente, struttura Blueprint e repository |
-| 2 | Autenticazione utenti (registrazione, login, sessioni, `@login_required`) |
-| 3 | CRUD presentazioni e slide, riordinamento, API JSON, MFA e reset password |
-| 4 | Editor canvas visuale: componenti drag & drop, resize, pannello proprietà, salvataggio AJAX |
-| 5 | Internazionalizzazione (it/en/es), upload immagini, test e consegna |
-
-### 8.1 Gantt semplificato
-
-```mermaid
-gantt
-    dateFormat  YYYY-MM-DD
-    title Piano di progetto SlidesApp
-    section Analisi
-    Requisiti e schema ER         :a1, 2026-04-10, 5d
-    Diagramma UML e casi d'uso    :a2, after a1, 3d
-    section Sviluppo
-    Autenticazione utenti         :b1, after a2, 5d
-    CRUD presentazioni e slide    :b2, after b1, 5d
-    MFA e reset password          :b3, after b2, 4d
-    API JSON e AJAX               :b4, after b3, 4d
-    Editor canvas visuale         :b5, after b4, 6d
-    section Rifinitura
-    Internazionalizzazione        :c1, after b5, 3d
-    Test e documentazione         :c2, after c1, 3d
-    Consegna su GitHub            :c3, after c2, 2d
-```
-
----
-
-## 9. Entità e relazioni (schema ER)
+## 7. Entità e relazioni (schema ER)
 
 Schema basato su `app/schema.sql`.
 
@@ -349,9 +176,7 @@ erDiagram
     USER ||--o{ PASSWORD_RESET_TOKENS : riceve
 ```
 
----
-
-## 10. Diagramma UML delle classi
+## 8. Diagramma UML delle classi
 
 Diagramma semplificato che mostra le classi di dominio principali del sistema.
 
@@ -417,4 +242,122 @@ classDiagram
     User "1" -- "*" PasswordResetToken : riceve
 ```
 
----
+## 9. Casi d'uso
+
+### 9.1 Casi d'uso principali
+
+1. Registrazione utente
+2. Login
+3. Reset password via email
+4. Creare presentazione
+5. Aggiungere slide
+6. Aprire editor canvas di una slide
+7. Aggiungere componente alla slide
+8. Salvare il canvas
+9. Eliminare presentazione
+
+### 9.2 Descrizione semplificata dei casi d'uso
+
+- **Registrazione**: il visitatore inserisce username, email e password; il sistema salva l'account con password hashata e reindirizza al login.
+- **Login**: l'utente inserisce le credenziali; il sistema verifica l'hash della password. Se l'utente ha MFA attivo, viene reindirizzato alla verifica del secondo fattore prima di accedere.
+- **Verifica MFA**: l'utente inserisce il codice a 6 cifre generato dall'app authenticator (TOTP) oppure ricevuto via email (OTP); solo dopo la verifica la sessione viene aperta.
+- **Reset password**: l'utente inserisce la propria email; il sistema invia un link con token monouso; cliccando il link l'utente imposta una nuova password.
+- **Creare presentazione**: l'utente compila il form con titolo e descrizione; la presentazione viene creata tramite AJAX e appare nella lista senza ricaricare la pagina.
+- **Aggiungere slide**: dall'interno di una presentazione, l'utente clicca "Aggiungi slide"; il sistema crea una slide vuota con sfondo bianco e la aggiunge in coda tramite AJAX.
+- **Riordinare slide**: l'utente clicca "Sposta su" o "Sposta giù"; una chiamata AJAX aggiorna le posizioni nel DB e ridisegna l'elenco delle slide nel DOM.
+- **Aprire editor canvas**: l'utente clicca "Modifica" su una slide; viene caricata la pagina dell'editor con il canvas (960×540 px, scalato via CSS transform) e il pannello proprietà laterale.
+- **Aggiungere componente**: l'utente apre il menu "+ Aggiungi" e sceglie il tipo (titolo, testo, immagine, link); il componente appare sul canvas con dimensioni e posizione predefinite.
+- **Spostare componente**: l'utente clicca e trascina il componente; la posizione viene aggiornata in percentuale in tempo reale senza chiamate al server.
+- **Ridimensionare componente**: l'utente trascina uno degli 8 handle colorati attorno al componente selezionato; larghezza e altezza vengono aggiornate in percentuale.
+- **Modificare proprietà**: l'utente seleziona un componente; nel pannello laterale modifica testo, dimensione font, colore o sfondo; le modifiche sono visibili immediatamente sul canvas.
+- **Salvare il canvas**: l'utente clicca "Salva"; una chiamata AJAX invia tutti i componenti con le loro proprietà all'API, che li salva nel database.
+- **Cambiare lingua**: l'utente clicca la bandiera desiderata nel menu a tendina in alto a destra; la lingua viene salvata in sessione e applicata a tutta l'interfaccia.
+
+### 9.3 Relazioni tra casi d'uso: include ed extend
+
+In un diagramma dei casi d'uso si usano due tipi di relazioni aggiuntive:
+
+- `<<include>>`: rappresenta un comportamento obbligatorio e riutilizzabile. Un caso d'uso base include un altro quando quel comportamento viene sempre eseguito.
+- `<<extend>>`: rappresenta un comportamento opzionale o condizionale che si aggiunge al caso d'uso base solo in certe situazioni.
+
+I casi d'uso non devono essere confusi con i rapporti tra attori. In SlidesApp, `Utente` è una specializzazione di `Visitatore`: l'utente può fare tutto ciò che può fare un visitatore, più alcune azioni riservate. Questo si modella con una generalizzazione tra attori:
+
+```
+   Visitatore
+       ^
+       |
+     Utente
+```
+
+Relazioni `<<include>>` — la verifica dell'autenticazione è un passaggio obbligatorio per tutte le azioni che modificano i dati:
+
+- `Crea presentazione` <<include>> `Verifica autenticazione`
+- `Aggiungi slide` <<include>> `Verifica autenticazione`
+- `Elimina slide` <<include>> `Verifica autenticazione`
+- `Elimina presentazione` <<include>> `Verifica autenticazione`
+- `Apri editor canvas` <<include>> `Verifica autenticazione`
+- `Salva canvas` <<include>> `Verifica autenticazione`
+
+Relazioni `<<extend>>` — comportamenti opzionali che si attivano solo in certe condizioni:
+
+- `Verifica MFA` <<extend>> `Login`: il sistema chiede il codice MFA solo se l'utente lo ha attivato.
+- `Reset password` <<extend>> `Login`: l'utente può richiedere il reset password solo dalla pagina di login, quando non ricorda le credenziali.
+- `Upload immagine` <<extend>> `Modifica proprietà componente`: il caricamento dell'immagine è disponibile solo quando il componente selezionato è di tipo immagine.
+
+### 9.4 Diagramma dei casi d'uso
+
+Il diagramma dei casi d'uso è stato generato a partire dal file
+PlantUML `docs/SlidesApp_UseCase.puml`.
+
+![Diagramma casi d'uso](docs/SlidesApp_UseCase.png)
+
+## 10. Pianificazione e milestone
+
+Questa sezione descrive la sequenza di lavoro del progetto, con tre fasi principali:
+
+- **Analisi**: definire i requisiti, i casi d'uso e i modelli concettuali.
+- **Sviluppo**: realizzare le funzionalità principali, l'interfaccia e la gestione dati.
+- **Rifinitura**: testare, correggere e preparare la consegna.
+
+Nella fase di analisi si producono gli schemi ER e UML; questi documenti aiutano a progettare il database e le classi prima di scrivere il codice.
+
+| Settimana | Attività |
+| --- | --- |
+| 1 | Analisi dei requisiti, schema ER e UML, setup ambiente, struttura Blueprint e repository |
+| 2 | Autenticazione utenti (registrazione, login, sessioni, `@login_required`) |
+| 3 | CRUD presentazioni e slide, riordinamento, API JSON, MFA e reset password |
+| 4 | Editor canvas visuale: componenti drag & drop, resize, pannello proprietà, salvataggio AJAX |
+| 5 | Internazionalizzazione (it/en/es), upload immagini, test e consegna |
+
+### 10.1 Gantt semplificato
+
+```mermaid
+gantt
+    dateFormat  YYYY-MM-DD
+    title Piano di progetto SlidesApp
+    section Analisi
+    Requisiti e schema ER         :a1, 2026-04-10, 5d
+    Diagramma UML e casi d'uso    :a2, after a1, 3d
+    section Sviluppo
+    Autenticazione utenti         :b1, after a2, 5d
+    CRUD presentazioni e slide    :b2, after b1, 5d
+    MFA e reset password          :b3, after b2, 4d
+    API JSON e AJAX               :b4, after b3, 4d
+    Editor canvas visuale         :b5, after b4, 6d
+    section Rifinitura
+    Internazionalizzazione        :c1, after b5, 3d
+    Test e documentazione         :c2, after c1, 3d
+    Consegna su GitHub            :c3, after c2, 2d
+```
+
+## 11. Suggerimenti per la consegna
+
+- Caricare il progetto su GitHub con una struttura chiara.
+- Tenere un file `README.md` con istruzioni di installazione e uso:
+  creare l'ambiente virtuale (`python -m venv venv`), installare le
+  dipendenze (`pip install -r requirements.txt`), inizializzare il
+  database (`python setup_db.py`) e avviare l'app (`python run.py`).
+- Usare `.gitignore` per escludere `__pycache__`, `.venv`,
+  `instance/` e i file `*.mo`.
+- Includere i diagrammi di progetto nella cartella `docs/`.
+- Fare commit frequenti e significativi.

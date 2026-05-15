@@ -1,11 +1,31 @@
-from flask import Blueprint, request, jsonify, g, current_app
+from flask import Blueprint, request, jsonify, g, current_app, send_file
 from flask_babel import _
 import os
+import uuid
+from io import BytesIO
 from werkzeug.utils import secure_filename
 from app.repositories import presentation_repository, slide_repository, slide_component_repository
 from app.auth import login_required
 
 bp = Blueprint('api', __name__, url_prefix='/api')
+
+SLIDE_TEMPLATES = {
+    'blank': [],
+    'title_text': [
+        {'type': 'title', 'content': 'Titolo', 'x': 5, 'y': 5, 'width': 90, 'height': 20,
+         'font_size': 48, 'color': '#ff6600', 'bg_color': 'transparent', 'z_index': 0, 'image': None},
+        {'type': 'text', 'content': 'Testo della slide...', 'x': 5, 'y': 30, 'width': 90, 'height': 62,
+         'font_size': 22, 'color': '#333333', 'bg_color': 'transparent', 'z_index': 0, 'image': None},
+    ],
+    'title_text_image': [
+        {'type': 'title', 'content': 'Titolo', 'x': 5, 'y': 5, 'width': 90, 'height': 18,
+         'font_size': 48, 'color': '#ff6600', 'bg_color': 'transparent', 'z_index': 0, 'image': None},
+        {'type': 'text', 'content': 'Testo della slide...', 'x': 5, 'y': 28, 'width': 56, 'height': 65,
+         'font_size': 20, 'color': '#333333', 'bg_color': 'transparent', 'z_index': 0, 'image': None},
+        {'type': 'image', 'content': '', 'x': 63, 'y': 28, 'width': 32, 'height': 65,
+         'font_size': 0, 'color': '#000000', 'bg_color': 'transparent', 'z_index': 0, 'image': None},
+    ],
+}
 
 
 def save_image(file):
@@ -31,7 +51,7 @@ def get_presentations():
 @bp.route('/presentations/create', methods=['POST'])
 @login_required
 def create_presentation():
-    data = request.get_json()
+    data = request.get_json() or {}
     title = data.get('title', '').strip()
     description = data.get('description', '').strip()
     if not title:
@@ -65,12 +85,17 @@ def get_slides(presentation_id):
 def create_slide(presentation_id):
     presentation = presentation_repository.get_presentation_by_id(presentation_id)
     if not presentation or presentation['author_id'] != g.user['id']:
-        return jsonify({'ok': False, 'error': 'Presentazione non trovata.'}), 404
+        return jsonify({'ok': False, 'error': _('Presentazione non trovata.')}), 404
     data = request.get_json() or {}
     bg_color = data.get('bg_color', '#ffffff')
+    template_name = data.get('template', 'blank')
     slides = slide_repository.get_slides_by_presentation_id(presentation_id)
     position = len(slides) + 1
     slide = slide_repository.create_slide(presentation_id, position, bg_color)
+    preset = SLIDE_TEMPLATES.get(template_name, [])
+    if preset:
+        slide_component_repository.save_all_components(slide['id'], preset)
+    slide['components'] = slide_component_repository.get_components_by_slide(slide['id'])
     return jsonify({'ok': True, 'slide': slide})
 
 
@@ -150,6 +175,196 @@ def upload_component_image(slide_id):
     if not image_path:
         return jsonify({'ok': False, 'error': 'Nessuna immagine caricata.'}), 400
     return jsonify({'ok': True, 'path': image_path})
+
+
+# ─── Export / Import ──────────────────────────────────────────────────────────
+
+@bp.route('/presentations/<int:presentation_id>/export.pptx')
+@login_required
+def export_pptx(presentation_id):
+    from pptx import Presentation as PptxPres
+    from pptx.util import Pt
+    from pptx.dml.color import RGBColor
+
+    presentation = presentation_repository.get_presentation_by_id(presentation_id)
+    if not presentation or presentation['author_id'] != g.user['id']:
+        return jsonify({'ok': False, 'error': _('Presentazione non trovata.')}), 404
+
+    W = 9144000
+    H = 5143500
+    prs = PptxPres()
+    prs.slide_width = W
+    prs.slide_height = H
+
+    slides = slide_repository.get_slides_by_presentation_id(presentation_id)
+    for slide_data in slides:
+        pptx_slide = prs.slides.add_slide(prs.slide_layouts[6])
+
+        bg = (slide_data.get('bg_color') or '#ffffff')
+        if bg != 'transparent':
+            fill = pptx_slide.background.fill
+            fill.solid()
+            hex_c = bg.lstrip('#')
+            try:
+                fill.fore_color.rgb = RGBColor(
+                    int(hex_c[0:2], 16), int(hex_c[2:4], 16), int(hex_c[4:6], 16)
+                )
+            except Exception:
+                pass
+
+        components = slide_component_repository.get_components_by_slide(slide_data['id'])
+        for comp in components:
+            x = int(comp['x'] / 100 * W)
+            y = int(comp['y'] / 100 * H)
+            w = int(comp['width'] / 100 * W)
+            h = int(comp['height'] / 100 * H)
+            if comp['type'] in ('title', 'text', 'link'):
+                txBox = pptx_slide.shapes.add_textbox(x, y, w, h)
+                tf = txBox.text_frame
+                tf.word_wrap = True
+                run = tf.paragraphs[0].add_run()
+                run.text = comp.get('content', '')
+                run.font.size = Pt(comp.get('font_size') or 24)
+                run.font.bold = (comp['type'] == 'title')
+                color = (comp.get('color') or '#333333')
+                if color.startswith('#'):
+                    hex_c = color.lstrip('#')
+                    try:
+                        run.font.color.rgb = RGBColor(
+                            int(hex_c[0:2], 16), int(hex_c[2:4], 16), int(hex_c[4:6], 16)
+                        )
+                    except Exception:
+                        pass
+            elif comp['type'] == 'image' and comp.get('image'):
+                img_path = os.path.join(current_app.root_path, comp['image'].lstrip('/'))
+                if os.path.exists(img_path):
+                    try:
+                        pptx_slide.shapes.add_picture(img_path, x, y, w, h)
+                    except Exception:
+                        pass
+
+    buf = BytesIO()
+    prs.save(buf)
+    buf.seek(0)
+    title = presentation.get('title', 'presentation')
+    return send_file(
+        buf,
+        download_name=f'{title}.pptx',
+        as_attachment=True,
+        mimetype='application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    )
+
+
+@bp.route('/presentations/<int:presentation_id>/import', methods=['POST'])
+@login_required
+def import_pptx(presentation_id):
+    from pptx import Presentation as PptxPres
+    from pptx.enum.shapes import MSO_SHAPE_TYPE
+
+    presentation = presentation_repository.get_presentation_by_id(presentation_id)
+    if not presentation or presentation['author_id'] != g.user['id']:
+        return jsonify({'ok': False, 'error': _('Presentazione non trovata.')}), 404
+
+    file = request.files.get('file')
+    if not file or not file.filename.lower().endswith('.pptx'):
+        return jsonify({'ok': False, 'error': 'File .pptx richiesto.'}), 400
+
+    prs = PptxPres(file)
+    W = int(prs.slide_width)
+    H = int(prs.slide_height)
+    if not W or not H:
+        return jsonify({'ok': False, 'error': 'Dimensioni slide non valide.'}), 400
+
+    existing = slide_repository.get_slides_by_presentation_id(presentation_id)
+    position = len(existing) + 1
+    count = 0
+
+    for pptx_slide in prs.slides:
+        bg_color = '#ffffff'
+        try:
+            fill = pptx_slide.background.fill
+            if fill.type is not None:
+                rgb = fill.fore_color.rgb
+                bg_color = '#{:02x}{:02x}{:02x}'.format(rgb.red, rgb.green, rgb.blue)
+        except Exception:
+            pass
+
+        slide = slide_repository.create_slide(presentation_id, position, bg_color)
+        position += 1
+        count += 1
+        components = []
+
+        for idx, shape in enumerate(pptx_slide.shapes):
+            if shape.has_text_frame and shape.text_frame.text.strip():
+                comp_type = 'text'
+                try:
+                    if shape.placeholder_format is not None and (
+                        shape.placeholder_format.idx == 0 or 'title' in shape.name.lower()
+                    ):
+                        comp_type = 'title'
+                except Exception:
+                    pass
+                if 'title' in shape.name.lower():
+                    comp_type = 'title'
+
+                font_size = 24
+                color = '#333333'
+                try:
+                    for para in shape.text_frame.paragraphs:
+                        if para.runs:
+                            run = para.runs[0]
+                            if run.font.size:
+                                font_size = int(run.font.size.pt)
+                            if run.font.color.type is not None:
+                                rgb = run.font.color.rgb
+                                color = '#{:02x}{:02x}{:02x}'.format(
+                                    rgb.red, rgb.green, rgb.blue
+                                )
+                            break
+                except Exception:
+                    pass
+
+                components.append({
+                    'type': comp_type,
+                    'content': shape.text_frame.text,
+                    'x': round(int(shape.left) / W * 100, 1),
+                    'y': round(int(shape.top) / H * 100, 1),
+                    'width': round(int(shape.width) / W * 100, 1),
+                    'height': round(int(shape.height) / H * 100, 1),
+                    'font_size': font_size,
+                    'color': color,
+                    'bg_color': 'transparent',
+                    'z_index': idx,
+                    'image': None,
+                })
+            elif shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
+                try:
+                    img_bytes = shape.image.blob
+                    ext = shape.image.ext
+                    fname = f"{uuid.uuid4().hex}.{ext}"
+                    upload_folder = current_app.config['UPLOAD_FOLDER']
+                    os.makedirs(upload_folder, exist_ok=True)
+                    with open(os.path.join(upload_folder, fname), 'wb') as img_f:
+                        img_f.write(img_bytes)
+                    components.append({
+                        'type': 'image',
+                        'content': '',
+                        'x': round(int(shape.left) / W * 100, 1),
+                        'y': round(int(shape.top) / H * 100, 1),
+                        'width': round(int(shape.width) / W * 100, 1),
+                        'height': round(int(shape.height) / H * 100, 1),
+                        'font_size': 0,
+                        'color': '#000000',
+                        'bg_color': 'transparent',
+                        'z_index': idx,
+                        'image': f'/static/uploads/{fname}',
+                    })
+                except Exception:
+                    pass
+
+        slide_component_repository.save_all_components(slide['id'], components)
+
+    return jsonify({'ok': True, 'slides_added': count})
 
 
 # ─── Auth ─────────────────────────────────────────────────────────────────────

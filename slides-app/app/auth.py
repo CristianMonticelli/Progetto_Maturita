@@ -82,7 +82,7 @@ def register():
                 error = str(e)
         
         if error:
-            flash(_(error), 'error')
+            flash(error, 'error')
 
     # CASO 1: GET (Mostriamo il form)
     return render_template('auth/register.html')
@@ -143,28 +143,26 @@ def forgot_password():
         if not user:
             flash(_('Nessun account trovato con questa email.'), 'error')
             return render_template('auth/forgot_password.html')
-        if user:
-            import secrets
-            from datetime import datetime, timedelta
-            token = secrets.token_urlsafe(32)
-            expires_at = (datetime.now() + timedelta(hours=1)).isoformat()
-            user_repository.save_reset_token(user['id'], token, expires_at)
-            reset_url = url_for('auth.reset_password', token=token, _external=True)
-            # Invia un'email reale con Flask-Mail
-            try:
-                msg = Message(
-                    subject='Reset password - SlidesApp',
-                    recipients=[email],
-                    body=f'Per reimpostare la password usa questo link:\n\n{reset_url}'
-                )
-                mail.send(msg)
-            except Exception as e:
-                import traceback
-                current_app.logger.error(
-                    f'Errore invio email reset password a {email}: {e}\n'
-                    f'{traceback.format_exc()}'
-                )
-            flash(_('Email di reset inviata! Controlla la tua casella di posta.'), 'success')
+        import secrets
+        from datetime import datetime, timedelta
+        token = secrets.token_urlsafe(32)
+        expires_at = (datetime.now() + timedelta(hours=1)).isoformat()
+        user_repository.save_reset_token(user['id'], token, expires_at)
+        reset_url = url_for('auth.reset_password', token=token, _external=True)
+        try:
+            msg = Message(
+                subject='Reset password - SlidesApp',
+                recipients=[email],
+                body=f'Per reimpostare la password usa questo link:\n\n{reset_url}'
+            )
+            mail.send(msg)
+        except Exception as e:
+            import traceback
+            current_app.logger.error(
+                f'Errore invio email reset password a {email}: {e}\n'
+                f'{traceback.format_exc()}'
+            )
+        flash(_('Email di reset inviata! Controlla la tua casella di posta.'), 'success')
         return redirect(url_for('auth.login'))
     return render_template('auth/forgot_password.html')
 

@@ -47,10 +47,18 @@
     <h2>{{ presentazione['title'] }}</h2>
     <p style="color:#ccc;">{{ presentazione['description'] }}</p>
   </div>
-  <a href="{{ url_for('presentations.presenta', presentation_id=presentazione['id']) }}"
-     class="btn" style="background:#ff6600; padding:14px 28px; font-size:1.05em; white-space:nowrap;">
-    ▶ {{ _('Presenta') }}
-  </a>
+  <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+    <a href="{{ url_for('api.export_pptx', presentation_id=presentazione['id']) }}"
+       class="btn btn-secondary" style="white-space:nowrap;">&#11015; {{ _('Scarica .pptx') }}</a>
+    <label class="btn btn-secondary" style="cursor:pointer; margin:0; white-space:nowrap;">
+      &#11014; {{ _('Importa .pptx') }}
+      <input type="file" id="import-pptx-input" accept=".pptx" style="display:none;">
+    </label>
+    <a href="{{ url_for('presentations.presenta', presentation_id=presentazione['id']) }}"
+       class="btn" style="background:#ff6600; padding:14px 28px; font-size:1.05em; white-space:nowrap;">
+      &#9654; {{ _('Presenta') }}
+    </a>
+  </div>
 </div>
 
 <!-- Slides in colonna -->
@@ -112,7 +120,9 @@
       <input type="color" id="new-bg" value="#ffffff"
              style="width:46px;height:38px;border:none;border-radius:6px;cursor:pointer;padding:0;">
     </div>
-    <button class="btn" id="btn-add-slide" style="padding:10px 22px;">+ {{ _('Aggiungi slide') }}</button>
+    <button class="btn add-slide-btn" data-template="blank" style="padding:10px 18px;">&#9634; {{ _('Vuota') }}</button>
+    <button class="btn btn-secondary add-slide-btn" data-template="title_text" style="padding:10px 18px;">&#128196; {{ _('Titolo + Testo') }}</button>
+    <button class="btn btn-secondary add-slide-btn" data-template="title_text_image" style="padding:10px 18px;">&#128444; {{ _('Titolo + Testo + Img') }}</button>
   </div>
 </div>
 
@@ -133,33 +143,33 @@ document.addEventListener('DOMContentLoaded', () => {
   const presentationId = {{ presentazione['id'] }};
   const container = document.getElementById('slides-container');
 
-  // Add slide
-  document.getElementById('btn-add-slide').addEventListener('click', async () => {
-    const bgColor = document.getElementById('new-bg').value;
-    try {
-      const res = await apiFetch(`/api/presentations/${presentationId}/slides`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bg_color: bgColor }),
-      });
-      const emptyMsg = document.getElementById('empty-slides-msg');
-      if (emptyMsg) emptyMsg.remove();
-
-      const index = container.querySelectorAll('.slide-group').length + 1;
-      const slide = res.slide;
-      container.insertAdjacentHTML('beforeend', buildSlideHtml(slide, index));
-      scalePreviews();
-      showToast('{{ _("Slide aggiunta!") }}');
-    } catch {}
-  });
+  function buildComponentHtml(comp) {
+    const bgStyle = (comp.bg_color && comp.bg_color !== 'transparent')
+      ? `background:${comp.bg_color};border-radius:4px;` : '';
+    const style = `left:${comp.x}%;top:${comp.y}%;width:${comp.width}%;height:${comp.height}%;${bgStyle}`;
+    if (comp.type === 'image' && comp.image) {
+      return `<div class="sp-comp" style="${style}"><img src="${comp.image}" style="width:100%;height:100%;object-fit:contain;border-radius:4px;pointer-events:none;"></div>`;
+    } else if (comp.type === 'title') {
+      return `<div class="sp-comp" style="${style}"><div style="font-size:${comp.font_size||48}px;font-weight:700;color:${comp.color||'#ff6600'};line-height:1.2;white-space:pre-wrap;width:100%;height:100%;overflow:hidden;">${comp.content||''}</div></div>`;
+    } else if (comp.type === 'text') {
+      return `<div class="sp-comp" style="${style}"><div style="font-size:${comp.font_size||22}px;color:${comp.color||'#333333'};line-height:1.5;white-space:pre-wrap;width:100%;height:100%;overflow:hidden;">${comp.content||''}</div></div>`;
+    } else if (comp.type === 'link') {
+      return `<div class="sp-comp" style="${style}"><div style="font-size:${comp.font_size||18}px;color:${comp.color||'#0066cc'};text-decoration:underline;line-height:1.4;white-space:nowrap;width:100%;height:100%;overflow:hidden;">${comp.content||''}</div></div>`;
+    }
+    return '';
+  }
 
   function buildSlideHtml(slide, index) {
+    const components = slide.components || [];
+    const compsHtml = components.length > 0
+      ? components.map(c => buildComponentHtml(c)).join('')
+      : `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:1em;">{{ _('Nessun elemento') }}</div>`;
     return `
       <div class="slide-group" data-slide-id="${slide.id}">
         <div class="slide-preview-outer" onclick="window.location='/slides/${slide.id}/modifica'">
           <span class="slide-number-badge">${index}</span>
           <div class="slide-preview-inner" style="background:${slide.bg_color || '#ffffff'};">
-            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:1em;">{{ _('Nessun elemento') }}</div>
+            ${compsHtml}
           </div>
         </div>
         <div class="ppt-slide-controls">
@@ -170,6 +180,27 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       </div>`;
   }
+
+  // Add slide with template
+  document.querySelectorAll('.add-slide-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const bgColor = document.getElementById('new-bg').value;
+      const template = btn.dataset.template;
+      try {
+        const res = await apiFetch(`/api/presentations/${presentationId}/slides`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bg_color: bgColor, template }),
+        });
+        const emptyMsg = document.getElementById('empty-slides-msg');
+        if (emptyMsg) emptyMsg.remove();
+        const index = container.querySelectorAll('.slide-group').length + 1;
+        container.insertAdjacentHTML('beforeend', buildSlideHtml(res.slide, index));
+        scalePreviews();
+        showToast('{{ _("Slide aggiunta!") }}');
+      } catch {}
+    });
+  });
 
   // Move up / down
   container.addEventListener('click', async e => {
@@ -199,6 +230,25 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => group.remove(), 400);
       showToast('{{ _("Slide eliminata.") }}');
     } catch {}
+  });
+
+  // Import .pptx
+  document.getElementById('import-pptx-input').addEventListener('change', async function() {
+    if (!this.files[0]) return;
+    showToast('{{ _("Importazione in corso...") }}');
+    const fd = new FormData();
+    fd.append('file', this.files[0]);
+    try {
+      const res = await apiFetch(`/api/presentations/${presentationId}/import`, {
+        method: 'POST',
+        body: fd,
+      });
+      showToast(`{{ _("Importate") }} ${res.slides_added} {{ _("slide!") }}`);
+      setTimeout(() => window.location.reload(), 1200);
+    } catch {
+      showToast('{{ _("Errore importazione.") }}', true);
+    }
+    this.value = '';
   });
 });
 </script>

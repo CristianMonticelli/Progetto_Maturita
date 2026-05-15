@@ -35,10 +35,14 @@ def create_presentation():
     return render_template('presentations/create.html')
 
 
-@bp.route('/presentazione/<id>', methods=('GET',))
+@bp.route('/presentazione/<int:id>', methods=('GET',))
 @login_required
 def presentazione(id):
     presentazione = presentation_repository.get_presentation_by_id(id)
+    if not presentazione:
+        flash(_('Presentazione non trovata.'), 'error')
+        return redirect(url_for('presentations.list_presentations'))
+
     slides = slide_repository.get_slides_by_presentation_id(id)
 
     # Normalize positions
@@ -77,9 +81,11 @@ def presenta(presentation_id):
 @login_required
 def delete_presentation(presentation_id):
     presentation = presentation_repository.get_presentation_by_id(presentation_id)
-    if presentation:
-        presentation_repository.delete_presentation(presentation_id)
-        flash('Presentazione eliminata.')
+    if not presentation:
+        flash(_('Presentazione non trovata.'), 'error')
+    elif presentation['author_id'] != g.user['id']:
+        flash(_('Non autorizzato.'), 'error')
     else:
-        flash('Presentazione non trovata.')
+        presentation_repository.delete_presentation(presentation_id)
+        flash(_('Presentazione eliminata.'), 'success')
     return redirect(url_for('presentations.list_presentations'))

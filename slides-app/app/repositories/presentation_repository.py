@@ -24,10 +24,13 @@ def create_presentation(title, description, author_id):
     presentation_id = cursor.lastrowid
     return get_presentation_by_id(presentation_id)
 
-def get_presentation_by_id(id):
+def get_presentation_by_id(presentation_id):
+    try:
+        presentation_id = int(presentation_id)
+    except (TypeError, ValueError):
+        return None
     db = get_db()
-    query = 'SELECT * FROM presentations WHERE id = ?'
-    row = db.execute(query, (id,)).fetchone()
+    row = db.execute('SELECT * FROM presentations WHERE id = ?', (presentation_id,)).fetchone()
     return dict(row) if row else None
 
 
