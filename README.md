@@ -282,3 +282,13 @@ Le stringhe dell'interfaccia sono avvolte con `_()` di Flask-Babel. I file `.po`
 - Esportazione in PDF
 - Più template predefiniti per le slide
 - Supporto a forme geometriche come componente aggiuntivo
+
+---
+
+## Crediti e ispirazioni
+
+### Logica drag & drop
+L'algoritmo di drag & drop nell'editor canvas (ora in `app/static/js/edit-slide.js`) si basa sul pattern classico descritto nel tutorial [javascript.info — Mouse drag & drop](https://javascript.info/mouse-drag-drop): registrazione dell'offset al click sul componente (`dragOffPct`), aggiornamento continuo della posizione in `mousemove` con coordinate in percentuale rispetto al canvas, rilascio dello stato in `mouseup`. Il codice è stato adattato per lavorare con un canvas scalato tramite `CSS transform: scale()` e per supportare otto handle di ridimensionamento direzionali (nw, n, ne, e, se, s, sw, w).
+
+### Gestione interazioni UI
+L'approccio alla gestione degli eventi di trascinamento e ridimensionamento è ispirato ai pattern di librerie come [interact.js](https://interactjs.io/), pur non essendo usata direttamente nel progetto. Tutta la logica è implementata in JavaScript vanilla senza dipendenze esterne.
