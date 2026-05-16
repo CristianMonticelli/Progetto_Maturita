@@ -25,7 +25,6 @@ SlidesApp è un'applicazione web per la creazione e la gestione di presentazioni
 ### Gestione account
 - Registrazione con username, email e password hashata (Werkzeug)
 - Login e logout con sessioni Flask
-- **Autenticazione a due fattori (MFA)**: via app TOTP (Google Authenticator, Authy) con QR code, oppure via codice OTP inviato per email
 - **Recupero password** via link monouso inviato all'indirizzo email registrato
 
 ### Presentazioni e slide
@@ -273,6 +272,10 @@ L'autenticazione a due fattori supporta sia TOTP (standard RFC 6238, compatibile
 ### Internazionalizzazione GNU gettext
 Le stringhe dell'interfaccia sono avvolte con `_()` di Flask-Babel. I file `.po` (leggibili) vengono compilati in `.mo` (binari) che Flask-Babel legge a runtime. La lingua è salvata in `session['lang']` e viene preservata esplicitamente durante `session.clear()` al login e logout.
 
+### Punto di ingresso unico per la creazione
+
+La creazione di una nuova presentazione avviene esclusivamente tramite il pulsante "Crea presentazione" nella barra di navigazione in alto, sempre visibile. In una versione precedente esisteva un secondo bottone con modal AJAX nella pagina delle presentazioni personali — è stato rimosso per semplificare l'interfaccia ed evitare duplicazioni.
+
 ---
 
 ## Sviluppi futuri
@@ -282,6 +285,7 @@ Le stringhe dell'interfaccia sono avvolte con `_()` di Flask-Babel. I file `.po`
 - Esportazione in PDF
 - Più template predefiniti per le slide
 - Supporto a forme geometriche come componente aggiuntivo
+- Autenticazione a due fattori (MFA): via app TOTP con QR code (Google Authenticator) oppure via codice OTP via email. Lo schema del database è già predisposto con le colonne `mfa_enabled` e `mfa_secret` nella tabella utenti.
 
 ---
 
@@ -301,7 +305,9 @@ La creazione di una nuova presentazione avviene tramite il pulsante "Crea presen
 
 ## Fonti e riferimenti
 
-Il progetto include codice JavaScript per l'editor canvas (drag & drop e ridimensionamento dei componenti), funzionalità non affrontate a scuola. Il codice è stato adattato dalle seguenti risorse esterne:
+Il progetto include funzionalità che non sono state affrontate a scuola. Il codice è stato adattato dalle seguenti risorse esterne:
+
+### Editor canvas: drag & drop
 
 - **Algoritmo drag & drop** (mousedown / mousemove / mouseup con offset):
   https://javascript.info/mouse-drag-and-drop
@@ -309,11 +315,35 @@ Il progetto include codice JavaScript per l'editor canvas (drag & drop e ridimen
 - **Posizione relativa al canvas** (getBoundingClientRect):
   https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect
 
-- **Concetto degli handle di resize** (8 direzioni: nw, n, ne, e, se, s, sw, w):
+### Editor canvas: resize con handle direzionali
+
+- **Concetto degli 8 handle di resize** (nw, n, ne, e, se, s, sw, w):
   https://github.com/taye/interact.js
+
+### Chiamate AJAX
 
 - **Chiamate AJAX con fetch**:
   https://javascript.info/fetch
 
-- **API fullscreen** (modalità presentazione a schermo intero):
+### Modalità presentazione fullscreen
+
+- **API fullscreen del browser**:
   https://developer.mozilla.org/en-US/docs/Web/API/Fullscreen_API
+
+### Import/Export PowerPoint
+
+- **Creazione file .pptx — python-pptx quickstart**:
+  https://python-pptx.readthedocs.io/en/latest/user/quickstart.html
+  Fonte principale per export: aggiunta slide, caselle di testo (add_textbox), immagini (add_picture), colore sfondo e RGBColor.
+
+- **Unità di misura EMU in python-pptx**:
+  https://python-pptx.readthedocs.io/en/latest/user/units.html
+  Usato per convertire le posizioni percentuali del canvas nelle coordinate EMU richieste da PowerPoint (9 144 000 × 5 143 500).
+
+- **Lettura file .pptx — python-pptx shapes**:
+  https://python-pptx.readthedocs.io/en/latest/user/shapes.html
+  Usato per iterare forme, riconoscere testi (has_text_frame), immagini (MSO_SHAPE_TYPE.PICTURE) e leggerne font e colori.
+
+- **Repository ufficiale python-pptx con esempi**:
+  https://github.com/scanny/python-pptx
+  Consultato per il pattern BytesIO + send_file (generazione del file in memoria senza salvarlo su disco prima di inviarlo al browser).
