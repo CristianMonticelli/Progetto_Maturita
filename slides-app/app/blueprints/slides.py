@@ -9,7 +9,7 @@ bp = Blueprint('slides', __name__, url_prefix='/slides')
 @bp.route('/')
 @login_required
 def index():
-    return render_template('slides/index.html')
+    return redirect(url_for('presentations.list_presentations'))
 
 
 @bp.route('/<int:slide_id>/modifica')
