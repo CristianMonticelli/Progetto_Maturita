@@ -1,3 +1,4 @@
+import re
 # from flask_babel import _
 from flask import (
     Blueprint, flash, g, redirect, render_template, request, session, url_for, current_app
@@ -5,10 +6,13 @@ from flask import (
 from flask_babel import _
 from flask_mail import Message
 from app import mail
-# werkzeug.security ci offre strumenti professionali per la crittografia
 from werkzeug.security import check_password_hash, generate_password_hash
 from app.repositories import user_repository
 from functools import wraps
+
+EMAIL_REGEX = re.compile(
+    r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$'
+)
 
 # url_prefix='/auth' significa che tutte le route qui inizieranno con /auth
 bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -66,8 +70,8 @@ def register():
             error = _('Password obbligatoria.')
         elif not email:
             error = _('Email obbligatoria.')
-        elif '@' not in email or '.' not in email:
-            error = _('Inserisci un indirizzo email valido.')
+        elif not EMAIL_REGEX.match(email):
+            error = _('Inserisci un indirizzo email valido (es. nome@dominio.it).')
         elif user_repository.get_user_by_email(email):
             error = _('Email già in uso da un altro account.')
 
@@ -139,6 +143,9 @@ def logout():
 def forgot_password():
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
+        if not EMAIL_REGEX.match(email):
+            flash(_('Inserisci un indirizzo email valido.'), 'error')
+            return render_template('auth/forgot_password.html')
         user = user_repository.get_user_by_email(email)
         if not user:
             flash(_('Nessun account trovato con questa email.'), 'error')

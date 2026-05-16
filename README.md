@@ -220,7 +220,11 @@ python setup_db.py
 # 6. Compila le traduzioni
 pybabel compile -d app/translations
 
-# 7. Avvia l'applicazione
+# 7. (Opzionale) Crea account demo con contenuto di esempio
+python seed_demo.py
+# Username: demo | Password: demo1234
+
+# 8. Avvia l'applicazione
 python run.py
 ```
 
@@ -347,3 +351,11 @@ Il progetto include funzionalità che non sono state affrontate a scuola. Il cod
 - **Repository ufficiale python-pptx con esempi**:
   https://github.com/scanny/python-pptx
   Consultato per il pattern BytesIO + send_file (generazione del file in memoria senza salvarlo su disco prima di inviarlo al browser).
+
+### Validazione email lato server
+
+- **Regex validazione email — RFC 5322 semplificato**:
+  https://emailregex.com
+  Usato come riferimento per costruire l'espressione regolare che
+  verifica il formato dell'indirizzo email durante la registrazione
+  (`r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$'`).

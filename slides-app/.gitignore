@@ -6,3 +6,5 @@ instance/
 venv/
 *.sqlite
 static/uploads/
+files*/
+SPIEGAZIONE*.md
