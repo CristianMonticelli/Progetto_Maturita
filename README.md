@@ -292,3 +292,28 @@ L'algoritmo di drag & drop nell'editor canvas (ora in `app/static/js/edit-slide.
 
 ### Gestione interazioni UI
 L'approccio alla gestione degli eventi di trascinamento e ridimensionamento è ispirato ai pattern di librerie come [interact.js](https://interactjs.io/), pur non essendo usata direttamente nel progetto. Tutta la logica è implementata in JavaScript vanilla senza dipendenze esterne.
+
+### Note sul flusso di navigazione
+
+La creazione di una nuova presentazione avviene tramite il pulsante "Crea presentazione" nella barra di navigazione in alto, sempre visibile. In una versione precedente esisteva un secondo pulsante con modal AJAX nella pagina delle presentazioni personali — è stato rimosso per semplificare l'interfaccia ed evitare duplicazioni.
+
+---
+
+## Fonti e riferimenti
+
+Il progetto include codice JavaScript per l'editor canvas (drag & drop e ridimensionamento dei componenti), funzionalità non affrontate a scuola. Il codice è stato adattato dalle seguenti risorse esterne:
+
+- **Algoritmo drag & drop** (mousedown / mousemove / mouseup con offset):
+  https://javascript.info/mouse-drag-and-drop
+
+- **Posizione relativa al canvas** (getBoundingClientRect):
+  https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect
+
+- **Concetto degli handle di resize** (8 direzioni: nw, n, ne, e, se, s, sw, w):
+  https://github.com/taye/interact.js
+
+- **Chiamate AJAX con fetch**:
+  https://javascript.info/fetch
+
+- **API fullscreen** (modalità presentazione a schermo intero):
+  https://developer.mozilla.org/en-US/docs/Web/API/Fullscreen_API
