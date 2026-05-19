@@ -1,202 +1,22 @@
-# 🎞️ SlidesApp
+# SlidesApp
 
-> Progetto di fine anno — Modulo 03: Sviluppo Web e Database
+Applicazione web per la creazione e gestione di presentazioni digitali, sviluppata con Python e Flask.
+
 > Autore: **Cristian Monticelli** | Classe 5M | A.S. 2025/2026
 
-SlidesApp è un'applicazione web per la creazione e la gestione di presentazioni digitali, sviluppata con Python e Flask. Permette di comporre ogni slide tramite un editor canvas visuale con componenti liberamente posizionabili (titolo, testo, immagine, link), esportare presentazioni in PowerPoint e importare file `.pptx` esistenti.
-
 ---
 
-## 📋 Indice
+## Indice
 
-1. [Funzionalità](#funzionalità)
-2. [Stack tecnologico](#stack-tecnologico)
-3. [Architettura del progetto](#architettura-del-progetto)
-4. [Schema del database](#schema-del-database)
-5. [Installazione e avvio](#installazione-e-avvio)
-6. [Configurazione email](#configurazione-email)
-7. [Scelte progettuali](#scelte-progettuali)
-8. [Sviluppi futuri](#sviluppi-futuri)
-
----
-
-## Funzionalità
-
-### Gestione account
-- Registrazione con username, email e password hashata (Werkzeug)
-- Login e logout con sessioni Flask
-- **Recupero password** via link monouso inviato all'indirizzo email registrato
-
-### Presentazioni e slide
-- Creazione, visualizzazione ed eliminazione di presentazioni personali
-- Pagina pubblica nella home: tutte le presentazioni di tutti gli utenti visibili senza login
-- Aggiunta di slide con tre template predefiniti: **Vuota**, **Titolo + Testo**, **Titolo + Testo + Immagine**
-- Riordinamento slide con i pulsanti Sposta su / Sposta giù
-- Modalità presentazione a schermo intero (slideshow)
-
-### Editor canvas visuale
-- Canvas fisso 960×540 px, scalato via CSS transform in base alla finestra
-- Aggiunta di componenti: **Titolo**, **Testo**, **Immagine**, **Link**
-- **Drag & drop** per spostare i componenti con il mouse
-- **Ridimensionamento** tramite 8 handle direzionali (nw, n, ne, e, se, s, sw, w)
-- **Pannello proprietà** laterale: modifica testo, dimensione font, colore, sfondo
-- Spostamento fine con i tasti freccia (1%; con Shift 5%)
-- Eliminazione componente con tasto Canc o dal pannello
-- Salvataggio tramite chiamata AJAX senza ricaricare la pagina
-
-### Import / Export PowerPoint
-- **Esportazione** della presentazione in formato `.pptx` scaricabile
-- **Importazione** di file `.pptx`: ogni slide del file viene convertita in slide con componenti (testi, immagini)
-
-### Internazionalizzazione
-- Interfaccia disponibile in **italiano**, **inglese** e **spagnolo**
-- Selettore a bandiera sempre visibile nella topbar (click, non solo hover)
-- La lingua scelta persiste tra le pagine e attraverso login/logout
-
----
-
-## Stack tecnologico
-
-| Layer | Tecnologia |
-|---|---|
-| Backend | Python 3, Flask |
-| Database | SQLite (via modulo `sqlite3`) |
-| Autenticazione | Werkzeug (hashing), Flask sessions |
-| MFA | pyotp (TOTP), qrcode (QR PNG) |
-| Email | Flask-Mail (Gmail SMTP) |
-| Internazionalizzazione | Flask-Babel (GNU gettext) |
-| Import/Export pptx | python-pptx |
-| Frontend | HTML, CSS, Jinja2, JavaScript (AJAX con `fetch()`) |
-| Variabili d'ambiente | python-dotenv |
-
----
-
-## Architettura del progetto
-
-Il codice è organizzato seguendo il **pattern Blueprint + Repository**, che separa le responsabilità in moduli indipendenti.
-
-```
-slides-app/
-├── run.py
-├── setup_db.py
-├── requirements.txt
-├── .env.example
-├── babel.cfg
-│
-└── app/
-    ├── __init__.py
-    ├── auth.py
-    ├── db.py
-    ├── main.py
-    ├── schema.sql
-    │
-    ├── blueprints/
-    │   ├── presentations.py
-    │   ├── slides.py
-    │   └── api.py
-    │
-    ├── repositories/
-    │   ├── user_repository.py
-    │   ├── presentation_repository.py
-    │   ├── slide_repository.py
-    │   └── slide_component_repository.py
-    │
-    ├── templates/
-    │   ├── base.html
-    │   ├── main/index.html
-    │   ├── auth/
-    │   ├── presentations/
-    │   └── slides/
-    │
-    ├── static/uploads/
-    └── translations/
-```
-
-### Blueprint e responsabilità
-
-| Blueprint | Prefisso | Responsabilità |
-|---|---|---|
-| `main` | `/` | Home pubblica con tutte le presentazioni |
-| `presentations` | `/presentations` | CRUD presentazioni, dettaglio, slideshow |
-| `slides` | `/slides` | Editor canvas visuale |
-| `api` | `/api` | Endpoint JSON per AJAX, export/import pptx |
-| `auth` | `/auth` | Login, register, logout, MFA, reset password |
-
----
-
-## Schema del database
-
-```mermaid
-erDiagram
-    USER {
-        int id PK
-        string username
-        string password
-        string email
-        int mfa_enabled
-        string mfa_secret
-    }
-    PRESENTATIONS {
-        int id PK
-        string title
-        string description
-        int author_id FK
-        datetime created_at
-    }
-    SLIDES {
-        int id PK
-        int presentation_id FK
-        int position
-        string bg_color
-    }
-    SLIDE_COMPONENTS {
-        int id PK
-        int slide_id FK
-        string type
-        string content
-        real x
-        real y
-        real width
-        real height
-        int font_size
-        string color
-        string bg_color
-        int z_index
-        string image
-    }
-    OTP_TOKENS {
-        int id PK
-        int user_id FK
-        string token
-        datetime expires_at
-        int used
-    }
-    PASSWORD_RESET_TOKENS {
-        int id PK
-        int user_id FK
-        string token
-        datetime expires_at
-        int used
-    }
-
-    USER ||--o{ PRESENTATIONS : crea
-    PRESENTATIONS ||--o{ SLIDES : contiene
-    SLIDES ||--o{ SLIDE_COMPONENTS : composta_da
-    USER ||--o{ OTP_TOKENS : riceve
-    USER ||--o{ PASSWORD_RESET_TOKENS : riceve
-```
-
-La tabella `SLIDE_COMPONENTS` è il cuore del sistema: ogni componente ha posizione e dimensione in percentuale (0–100%) rispetto a un canvas 960×540, permettendo il ridimensionamento responsive senza perdere le proporzioni.
+1. [Installazione e avvio](#installazione-e-avvio)
+2. [Configurazione email](#configurazione-email)
+3. [Come usare l'applicazione](#come-usare-lapplicazione)
 
 ---
 
 ## Installazione e avvio
 
-### Prerequisiti
-- Python 3.10 o superiore
-- pip
-
-### Passi
+**Prerequisiti:** Python 3.10 o superiore, pip.
 
 ```bash
 # 1. Clona il repository
@@ -212,7 +32,7 @@ pip install -r requirements.txt
 
 # 4. Crea il file delle credenziali
 cp .env.example .env
-# Apri .env e inserisci le tue credenziali
+# Apri .env e inserisci le tue credenziali (vedi sezione successiva)
 
 # 5. Inizializza il database
 python setup_db.py
@@ -220,7 +40,7 @@ python setup_db.py
 # 6. Compila le traduzioni
 pybabel compile -d app/translations
 
-# 7. (Opzionale) Crea account demo con contenuto di esempio
+# 7. (Opzionale) Popola il database con un account e contenuto demo
 python seed_demo.py
 # Username: demo | Password: demo1234
 
@@ -234,13 +54,9 @@ L'app sarà disponibile su `http://127.0.0.1:5000`.
 
 ## Configurazione email
 
-Il recupero password e l'MFA via email richiedono credenziali Gmail.
+Necessaria per il recupero password. Senza questa configurazione l'app funziona normalmente; solo l'invio email non è attivo.
 
-```bash
-cp .env.example .env
-```
-
-Apri `.env` e compila:
+Apri `.env` e compila i campi:
 
 ```
 MAIL_USERNAME=tua-email@gmail.com
@@ -253,109 +69,114 @@ SECRET_KEY=una-stringa-casuale-lunga
 1. Vai su [Account Google](https://myaccount.google.com) → **Sicurezza**
 2. Abilita **Verifica in 2 passaggi**
 3. Torna su **Sicurezza** → **Password per le app**
-4. Genera una password per "Posta" e incollala nel `.env`
-
-Senza `.env` configurato l'app funziona normalmente; solo l'invio email non è attivo.
+4. Genera una password per "Posta" e incollala nel file `.env`
 
 ---
 
-## Scelte progettuali
+## Come usare l'applicazione
 
-### Pattern Blueprint + Repository
-Il codice è separato in moduli che gestiscono singole responsabilità. I Blueprint raggruppano le route per area funzionale; i Repository incapsulano tutto l'accesso al database, così cambiare il DBMS non richiede di toccare i controller.
+### Registrazione e login
 
-### AJAX con `fetch()` e API JSON
-Tutte le operazioni CRUD (crea presentazione, aggiungi slide, sposta, elimina) usano chiamate AJAX verso endpoint `/api/...` che rispondono in JSON. La pagina non si ricarica: il DOM viene aggiornato direttamente in JavaScript. Questo approccio è stato introdotto selettivamente solo dove migliora l'esperienza utente, mantenendo il rendering iniziale lato server con Jinja2.
+1. Aprire `http://127.0.0.1:5000`
+2. Cliccare **Registrati** nella barra in alto e inserire username, email e password
+3. Effettuare il **Login** con le credenziali create
+4. Per recuperare la password, cliccare **Password dimenticata** nella pagina di login e inserire l'email registrata — verrà inviato un link di reset valido per 1 ora
 
-### Editor canvas in percentuale
-Le posizioni e dimensioni dei componenti sono memorizzate come percentuali (0–100) rispetto a un canvas virtuale 960×540. Il canvas reale viene scalato via `CSS transform: scale()` in base alla finestra disponibile. Questa scelta permette di visualizzare le slide in modo identico nell'editor, nella preview e nel presenter su qualsiasi schermo.
+### Navigazione principale
 
-### MFA con doppio metodo
-L'autenticazione a due fattori supporta sia TOTP (standard RFC 6238, compatibile con Google Authenticator) che OTP via email. Il TOTP non richiede connessione internet lato client: il codice è generato localmente dall'app authenticator usando un segreto condiviso una sola volta via QR code.
+- La **home** (`/`) mostra tutte le presentazioni di tutti gli utenti ed è accessibile senza login
+- Dopo il login si viene reindirizzati all'elenco delle proprie presentazioni
 
-### Internazionalizzazione GNU gettext
-Le stringhe dell'interfaccia sono avvolte con `_()` di Flask-Babel. I file `.po` (leggibili) vengono compilati in `.mo` (binari) che Flask-Babel legge a runtime. La lingua è salvata in `session['lang']` e viene preservata esplicitamente durante `session.clear()` al login e logout.
+### Creare una presentazione
 
-### Punto di ingresso unico per la creazione
+1. Cliccare **Crea presentazione** nella barra di navigazione in alto
+2. Inserire titolo e descrizione, poi confermare
+3. La nuova presentazione apparirà nell'elenco personale
 
-La creazione di una nuova presentazione avviene esclusivamente tramite il pulsante "Crea presentazione" nella barra di navigazione in alto, sempre visibile. In una versione precedente esisteva un secondo bottone con modal AJAX nella pagina delle presentazioni personali — è stato rimosso per semplificare l'interfaccia ed evitare duplicazioni.
+### Aprire una presentazione
 
----
+- Cliccare sul titolo della presentazione nell'elenco per aprire la pagina di dettaglio
+- Nella pagina di dettaglio sono visibili tutte le slide in ordine con anteprima
 
-## Sviluppi futuri
+### Eliminare una presentazione
 
-- Condivisione di presentazioni con altri utenti tramite link
-- Modalità collaborativa in tempo reale (WebSocket)
-- Esportazione in PDF
-- Più template predefiniti per le slide
-- Supporto a forme geometriche come componente aggiuntivo
-- Autenticazione a due fattori (MFA): via app TOTP con QR code (Google Authenticator) oppure via codice OTP via email. Lo schema del database è già predisposto con le colonne `mfa_enabled` e `mfa_secret` nella tabella utenti.
+- Nella pagina di dettaglio cliccare **Elimina presentazione** (l'operazione è irreversibile e rimuove anche tutte le slide)
 
----
+### Aggiungere una slide
 
-## Crediti e ispirazioni
+- Nella pagina di dettaglio cliccare **Aggiungi slide**
+- Selezionare il template desiderato tra:
+  - **Vuota** — canvas bianco senza componenti
+  - **Titolo + Testo** — due caselle di testo preposizionate
+  - **Titolo + Testo + Immagine** — casella titolo, testo e area immagine
 
-### Logica drag & drop
-L'algoritmo di drag & drop nell'editor canvas (ora in `app/static/js/edit-slide.js`) si basa sul pattern classico descritto nel tutorial [javascript.info — Mouse drag & drop](https://javascript.info/mouse-drag-drop): registrazione dell'offset al click sul componente (`dragOffPct`), aggiornamento continuo della posizione in `mousemove` con coordinate in percentuale rispetto al canvas, rilascio dello stato in `mouseup`. Il codice è stato adattato per lavorare con un canvas scalato tramite `CSS transform: scale()` e per supportare otto handle di ridimensionamento direzionali (nw, n, ne, e, se, s, sw, w).
+### Riordinare le slide
 
-### Gestione interazioni UI
-L'approccio alla gestione degli eventi di trascinamento e ridimensionamento è ispirato ai pattern di librerie come [interact.js](https://interactjs.io/), pur non essendo usata direttamente nel progetto. Tutta la logica è implementata in JavaScript vanilla senza dipendenze esterne.
+- Usare i pulsanti **Sposta su** e **Sposta giù** accanto a ogni slide nella pagina di dettaglio
 
-### Note sul flusso di navigazione
+### Eliminare una slide
 
-La creazione di una nuova presentazione avviene tramite il pulsante "Crea presentazione" nella barra di navigazione in alto, sempre visibile. In una versione precedente esisteva un secondo pulsante con modal AJAX nella pagina delle presentazioni personali — è stato rimosso per semplificare l'interfaccia ed evitare duplicazioni.
+- Cliccare **Elimina** accanto alla slide nella pagina di dettaglio
 
----
+### Modificare una slide — editor canvas
 
-## Fonti e riferimenti
+Cliccare **Modifica** accanto a una slide per aprire l'editor visuale.
 
-Il progetto include funzionalità che non sono state affrontate a scuola. Il codice è stato adattato dalle seguenti risorse esterne:
+**Aggiungere componenti:**
+Usare i pulsanti nella barra laterale sinistra per aggiungere:
+- **Titolo** — testo grande centrato
+- **Testo** — casella di testo libera
+- **Immagine** — area per un'immagine caricata da file
+- **Link** — testo cliccabile con URL
 
-### Editor canvas: drag & drop
+**Selezionare un componente:**
+Cliccare su un componente nella canvas per selezionarlo. Comparirà un bordo di selezione con 8 handle di ridimensionamento.
 
-- **Algoritmo drag & drop** (mousedown / mousemove / mouseup con offset):
-  https://javascript.info/mouse-drag-and-drop
+**Spostare un componente:**
+Tenere premuto il mouse sul componente e trascinarlo nella posizione desiderata. In alternativa, usare i **tasti freccia** (spostamento 1%) oppure **Shift + tasti freccia** (spostamento 5%).
 
-- **Posizione relativa al canvas** (getBoundingClientRect):
-  https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect
+**Ridimensionare un componente:**
+Trascinare uno degli 8 handle ai bordi/angoli del componente (nw, n, ne, e, se, s, sw, w).
 
-### Editor canvas: resize con handle direzionali
+**Modificare le proprietà:**
+Con un componente selezionato, il **pannello proprietà** a destra mostra:
+- Contenuto testuale (modificabile direttamente)
+- Dimensione del font
+- Colore del testo
+- Colore di sfondo del componente
 
-- **Concetto degli 8 handle di resize** (nw, n, ne, e, se, s, sw, w):
-  https://github.com/taye/interact.js
+**Caricare un'immagine:**
+Cliccare su un componente di tipo immagine, poi nel pannello proprietà usare il pulsante **Carica immagine** per selezionare un file dal proprio computer.
 
-### Chiamate AJAX
+**Eliminare un componente:**
+Selezionare il componente e premere il tasto **Canc** oppure cliccare **Elimina componente** nel pannello proprietà.
 
-- **Chiamate AJAX con fetch**:
-  https://javascript.info/fetch
+**Cambiare il colore di sfondo della slide:**
+Nel pannello laterale, usare il selettore **Sfondo slide** per scegliere il colore.
 
-### Modalità presentazione fullscreen
+**Salvare:**
+Cliccare **Salva** in alto a destra. Il salvataggio avviene senza ricaricare la pagina.
 
-- **API fullscreen del browser**:
-  https://developer.mozilla.org/en-US/docs/Web/API/Fullscreen_API
+### Modalità presentazione
 
-### Import/Export PowerPoint
+- Nella pagina di dettaglio cliccare **Presenta** per avviare la modalità slideshow a schermo intero
+- Navigare tra le slide con i pulsanti **Precedente** e **Successivo**
 
-- **Creazione file .pptx — python-pptx quickstart**:
-  https://python-pptx.readthedocs.io/en/latest/user/quickstart.html
-  Fonte principale per export: aggiunta slide, caselle di testo (add_textbox), immagini (add_picture), colore sfondo e RGBColor.
+### Esportare in PowerPoint
 
-- **Unità di misura EMU in python-pptx**:
-  https://python-pptx.readthedocs.io/en/latest/user/units.html
-  Usato per convertire le posizioni percentuali del canvas nelle coordinate EMU richieste da PowerPoint (9 144 000 × 5 143 500).
+- Nella pagina di dettaglio cliccare **Esporta .pptx** per scaricare la presentazione in formato PowerPoint
 
-- **Lettura file .pptx — python-pptx shapes**:
-  https://python-pptx.readthedocs.io/en/latest/user/shapes.html
-  Usato per iterare forme, riconoscere testi (has_text_frame), immagini (MSO_SHAPE_TYPE.PICTURE) e leggerne font e colori.
+### Importare un file PowerPoint
 
-- **Repository ufficiale python-pptx con esempi**:
-  https://github.com/scanny/python-pptx
-  Consultato per il pattern BytesIO + send_file (generazione del file in memoria senza salvarlo su disco prima di inviarlo al browser).
+- Nella pagina delle presentazioni personali cliccare **Importa .pptx**
+- Selezionare un file `.pptx` dal proprio computer
+- Verrà creata automaticamente una nuova presentazione con le slide e i contenuti (testi e immagini) del file importato
 
-### Validazione email lato server
+### Cambiare lingua
 
-- **Regex validazione email — RFC 5322 semplificato**:
-  https://emailregex.com
-  Usato come riferimento per costruire l'espressione regolare che
-  verifica il formato dell'indirizzo email durante la registrazione
-  (`r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$'`).
+- In alto a destra nella barra di navigazione sono disponibili i selettori **IT**, **EN**, **ES**
+- La lingua scelta viene mantenuta per tutta la sessione, anche attraverso login e logout
+
+### Logout
+
+- Cliccare **Logout** in alto a destra per uscire dall'account
