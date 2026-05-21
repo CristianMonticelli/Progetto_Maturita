@@ -2,9 +2,11 @@ services:
   - type: web
     name: slidesapp
     runtime: python
-    rootDir: slides-app
-    buildCommand: pip install -r requirements.txt && pybabel compile -d app/translations
-    startCommand: gunicorn "app:create_app()" --bind 0.0.0.0:$PORT --workers 2
+    buildCommand: >-
+      cd slides-app &&
+      pip install -r requirements.txt &&
+      pybabel compile -d app/translations
+    startCommand: cd slides-app && gunicorn "app:create_app()" --bind 0.0.0.0:$PORT --workers 2
     envVars:
       - key: SECRET_KEY
         generateValue: true
