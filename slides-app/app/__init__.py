@@ -16,8 +16,14 @@ def create_app():
 
     app.config.from_mapping(
         SECRET_KEY=os.environ.get('SECRET_KEY', 'dev-key-change-in-production'),
-        DATABASE=os.path.join(app.instance_path, 'slides.sqlite'),
-        UPLOAD_FOLDER=os.path.join(app.root_path, 'static', 'uploads'),
+        DATABASE=os.environ.get(
+            'DATABASE',
+            os.path.join(app.instance_path, 'slides.sqlite')
+        ),
+        UPLOAD_FOLDER=os.environ.get(
+            'UPLOAD_FOLDER',
+            os.path.join(app.root_path, 'static', 'uploads')
+        ),
         BABEL_DEFAULT_LOCALE='it',
         MAIL_SERVER='smtp.gmail.com',
         MAIL_PORT=587,
@@ -38,11 +44,8 @@ def create_app():
         return session.get('lang', 'it')
     babel.init_app(app, locale_selector=get_locale)
 
-    # Assicurati che instance esista
-    try:
-        os.makedirs(app.instance_path)
-    except OSError:
-        pass
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    os.makedirs(os.path.dirname(app.config['DATABASE']), exist_ok=True)
 
     if not os.path.exists(app.config['DATABASE']):
         with app.open_resource('schema.sql') as f:

@@ -73,6 +73,23 @@ SECRET_KEY=una-stringa-casuale-lunga
 
 ---
 
+## Deploy su Render
+
+1. Crea un account su [render.com](https://render.com)
+2. Clicca **New → Web Service** e collega il repository GitHub
+3. Render rileverà automaticamente la configurazione da `render.yaml`
+4. Nella sezione **Environment** imposta:
+   - `MAIL_USERNAME` → la tua email Gmail
+   - `MAIL_PASSWORD` → la tua App Password Gmail
+   - `SECRET_KEY` → viene generata automaticamente
+5. Clicca **Deploy** — al primo avvio il database viene creato automaticamente
+
+> **Nota:** il piano gratuito di Render spegne il servizio dopo 15 minuti
+> di inattività. Il Render Disk (1 GB, ~$0.25/mese) è necessario per
+> mantenere il database e le immagini caricate tra un deploy e l'altro.
+
+---
+
 ## Come usare l'applicazione
 
 ### Registrazione e login

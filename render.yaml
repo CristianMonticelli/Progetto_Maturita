@@ -1,10 +1,10 @@
 services:
   - type: web
     name: slidesapp
-    env: python
+    runtime: python
     rootDir: slides-app
-    buildCommand: pip install -r requirements.txt && pybabel compile -d app/translations && python seed_demo.py
-    startCommand: gunicorn --bind 0.0.0.0:$PORT "app:create_app()"
+    buildCommand: pip install -r requirements.txt && pybabel compile -d app/translations
+    startCommand: gunicorn "app:create_app()" --bind 0.0.0.0:$PORT --workers 2
     envVars:
       - key: SECRET_KEY
         generateValue: true
@@ -12,3 +12,11 @@ services:
         sync: false
       - key: MAIL_PASSWORD
         sync: false
+      - key: DATABASE
+        value: /data/slides.sqlite
+      - key: UPLOAD_FOLDER
+        value: /data/uploads
+    disk:
+      name: slidesapp-data
+      mountPath: /data
+      sizeGB: 1
