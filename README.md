@@ -2,6 +2,9 @@
 
 Applicazione web per la creazione e gestione di presentazioni digitali, sviluppata con Python e Flask.
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://progetto-maturita-tzgr.onrender.com)
+> 🚀 **Link all'applicazione live:** [Apri SlidesApp su Render](https://progetto-maturita-tzgr.onrender.com)
+
 > Autore: **Cristian Monticelli** | Classe 5M | A.S. 2025/2026
 
 ---
