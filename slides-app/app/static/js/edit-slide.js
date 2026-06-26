@@ -19,6 +19,55 @@ document.addEventListener('DOMContentLoaded', () => {
   let dragOffPct  = { x: 0, y: 0 };
   let resizeStart = {};
 
+  function insertAtCursor(text) {
+    const ta = document.getElementById('prop-content');
+    if (!ta) return;
+    const start = ta.selectionStart ?? ta.value.length;
+    const end   = ta.selectionEnd   ?? ta.value.length;
+    ta.value = ta.value.substring(0, start) + text + ta.value.substring(end);
+    ta.selectionStart = ta.selectionEnd = start + text.length;
+    ta.dispatchEvent(new Event('input'));
+    ta.focus();
+  }
+
+  // Build char grid buttons
+  document.querySelectorAll('.char-grid').forEach(grid => {
+    const chars = grid.textContent.trim().split(/\s+/).filter(Boolean);
+    grid.innerHTML = '';
+    chars.forEach(ch => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'char-btn';
+      btn.textContent = ch;
+      btn.addEventListener('click', () => insertAtCursor(ch));
+      grid.appendChild(btn);
+    });
+  });
+
+  // Toggle emoji panel
+  document.getElementById('btn-emoji').addEventListener('click', () => {
+    const ep = document.getElementById('emoji-panel');
+    const sp = document.getElementById('symbols-panel');
+    sp.style.display = 'none';
+    ep.style.display = ep.style.display === 'none' ? 'block' : 'none';
+  });
+
+  // Toggle symbols panel
+  document.getElementById('btn-symbols').addEventListener('click', () => {
+    const sp = document.getElementById('symbols-panel');
+    const ep = document.getElementById('emoji-panel');
+    ep.style.display = 'none';
+    sp.style.display = sp.style.display === 'none' ? 'block' : 'none';
+  });
+
+  // Close panels when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#pr-content')) {
+      document.getElementById('emoji-panel').style.display   = 'none';
+      document.getElementById('symbols-panel').style.display = 'none';
+    }
+  });
+
   function scaleCanvas() {
     const availW = canvasArea.clientWidth  - 32;
     const availH = canvasArea.clientHeight - 32;

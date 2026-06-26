@@ -204,3 +204,7 @@ body.pres-mode { background: #111; overflow: hidden; font-family: 'Segoe UI', Ta
 
 .kbd-hint { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #aaa; padding: 10px 20px; border-radius: 8px; font-size: 0.82em; opacity: 0.75; pointer-events: none; transition: opacity 0.3s; }
 .kbd-hint.hidden { opacity: 0; }
+
+.char-grid { display: flex; flex-wrap: wrap; gap: 2px; }
+.char-btn { background: #2a2a2a; border: 1px solid #3a3a3a; color: #fff; border-radius: 4px; padding: 4px 7px; font-size: 1.1em; cursor: pointer; transition: background 0.15s; line-height: 1; min-width: 32px; text-align: center; }
+.char-btn:hover { background: #ff6600; border-color: #ff6600; }

@@ -55,6 +55,68 @@
         <div class="prop-row" id="pr-content">
           <label>{{ _('Contenuto') }}</label>
           <textarea id="prop-content" rows="4" placeholder="{{ _('Scrivi qui...') }}"></textarea>
+
+          <!-- Insert buttons row -->
+          <div style="display:flex; gap:6px; margin-top:6px;">
+            <button type="button" id="btn-emoji"
+                    style="flex:1; background:#2a2a2a; border:1px solid #444;
+                           color:#fff; border-radius:6px; padding:5px 8px;
+                           font-size:0.82em; cursor:pointer;">
+              😊 Emoji
+            </button>
+            <button type="button" id="btn-symbols"
+                    style="flex:1; background:#2a2a2a; border:1px solid #444;
+                           color:#fff; border-radius:6px; padding:5px 8px;
+                           font-size:0.82em; cursor:pointer;">
+              π Simboli
+            </button>
+          </div>
+
+          <!-- Emoji panel -->
+          <div id="emoji-panel" style="display:none; margin-top:6px; background:#1e1e1e;
+               border:1px solid #444; border-radius:8px; padding:8px; max-height:200px;
+               overflow-y:auto;">
+            <div style="font-size:0.75em; color:#888; margin-bottom:6px;">
+              Faccine e gesti
+            </div>
+            <div class="char-grid">
+              😊 😎 😄 😂 🤔 😍 🥳 😅 😢 😡 👍 👎 👏 🙌 🤝 ✌️ 💪 🙏 👀 ❤️
+              🔥 ⭐ 💡 ✅ ❌ ⚠️ 🎯 🏆 🎓 💼 📚 💻 📱 📷 🎨 🚀 ✈️ 🌍 🎵 🎮
+              🏅 🥇 🥈 🥉 🎁 🎉 🎊 🎞️ 📊 📈 📉 🔑 🔒 🔓 🔍 💬 📧 📞 🖥️ ⌨️
+            </div>
+            <div style="font-size:0.75em; color:#888; margin:8px 0 6px;">
+              Forme e segni
+            </div>
+            <div class="char-grid">
+              ● ○ ◆ ◇ ■ □ ▲ △ ▶ ▷ ★ ☆ ♦ ♣ ♠ ♥ ✦ ✧ ✪ ✫
+            </div>
+          </div>
+
+          <!-- Symbols panel -->
+          <div id="symbols-panel" style="display:none; margin-top:6px; background:#1e1e1e;
+               border:1px solid #444; border-radius:8px; padding:8px; max-height:200px;
+               overflow-y:auto;">
+            <div style="font-size:0.75em; color:#888; margin-bottom:6px;">Lettere greche</div>
+            <div class="char-grid">
+              α β γ δ ε ζ η θ λ μ π ρ σ τ φ χ ψ ω Α Β Γ Δ Ε Θ Λ Π Σ Φ Ψ Ω
+            </div>
+            <div style="font-size:0.75em; color:#888; margin:8px 0 6px;">Matematica</div>
+            <div class="char-grid">
+              ± × ÷ ≠ ≤ ≥ ≈ ∞ √ ∑ ∏ ∫ ∂ ∆ ∇ ∈ ∉ ⊂ ⊃ ∩ ∪ ² ³ ½ ¼ ¾ °
+            </div>
+            <div style="font-size:0.75em; color:#888; margin:8px 0 6px;">Frecce</div>
+            <div class="char-grid">
+              → ← ↑ ↓ ↔ ↕ ↗ ↘ ↙ ↖ ⇒ ⇐ ⇑ ⇓ ⇔ ➜ ➡ ⬅ ⬆ ⬇ ▸ ◂ ▴ ▾
+            </div>
+            <div style="font-size:0.75em; color:#888; margin:8px 0 6px;">Linee e separatori</div>
+            <div class="char-grid">
+              — – ─ │ ║ ═ ┌ ┐ └ ┘ ├ ┤ ┬ ┴ ┼ ╔ ╗ ╚ ╝ ╠ ╣ ╦ ╩ ╬
+            </div>
+            <div style="font-size:0.75em; color:#888; margin:8px 0 6px;">Vari</div>
+            <div class="char-grid">
+              © ® ™ § ¶ † ‡ • … « » " " ' ' ‹ › ¿ ¡ № ℃ ℉ ℓ ℮
+            </div>
+          </div>
         </div>
 
         <div class="prop-row" id="pr-image" style="display:none;">

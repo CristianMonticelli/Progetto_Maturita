@@ -47,6 +47,10 @@ pybabel compile -d app/translations
 python seed_demo.py
 # Username: demo | Password: demo1234
 
+# (Opzionale) Crea presentazione PCTO con account cristian
+python seed_pcto.py
+# Username: cristian | Password: pcto2026
+
 # 8. Avvia l'applicazione
 python run.py
 ```
