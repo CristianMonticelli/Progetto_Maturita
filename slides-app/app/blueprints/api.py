@@ -183,8 +183,9 @@ def upload_component_image(slide_id):
 @login_required
 def export_pptx(presentation_id):
     from pptx import Presentation as PptxPres
-    from pptx.util import Pt
+    from pptx.util import Pt, Emu
     from pptx.dml.color import RGBColor
+    from pptx.enum.text import MSO_AUTO_SIZE, PP_ALIGN
 
     presentation = presentation_repository.get_presentation_by_id(presentation_id)
     if not presentation or presentation['author_id'] != g.user['id']:
@@ -222,26 +223,57 @@ def export_pptx(presentation_id):
                 txBox = pptx_slide.shapes.add_textbox(x, y, w, h)
                 tf = txBox.text_frame
                 tf.word_wrap = True
-                run = tf.paragraphs[0].add_run()
-                run.text = comp.get('content', '')
-                run.font.size = Pt(comp.get('font_size') or 24)
-                run.font.bold = (comp['type'] == 'title')
+                tf.auto_size = MSO_AUTO_SIZE.NONE
+                tf.margin_left = 0
+                tf.margin_right = 0
+                tf.margin_top = 0
+                tf.margin_bottom = 0
+
                 color = (comp.get('color') or '#333333')
-                if color.startswith('#'):
-                    hex_c = color.lstrip('#')
-                    try:
-                        run.font.color.rgb = RGBColor(
-                            int(hex_c[0:2], 16), int(hex_c[2:4], 16), int(hex_c[4:6], 16)
-                        )
-                    except Exception:
-                        pass
-            elif comp['type'] == 'image' and comp.get('image'):
-                img_path = os.path.join(current_app.root_path, comp['image'].lstrip('/'))
-                if os.path.exists(img_path):
-                    try:
-                        pptx_slide.shapes.add_picture(img_path, x, y, w, h)
-                    except Exception:
-                        pass
+                hex_c = color.lstrip('#') if color.startswith('#') else '333333'
+                try:
+                    rgb = RGBColor(int(hex_c[0:2], 16), int(hex_c[2:4], 16), int(hex_c[4:6], 16))
+                except Exception:
+                    rgb = RGBColor(0x33, 0x33, 0x33)
+
+                font_size = comp.get('font_size') or 24
+                pt_size = max(8, int(font_size * 0.72))
+
+                raw_text = comp.get('content', '') or ''
+                lines = raw_text.split('\n')
+
+                first_para = tf.paragraphs[0]
+                first_para.alignment = PP_ALIGN.LEFT
+                run = first_para.add_run()
+                run.text = lines[0]
+                run.font.size = Pt(pt_size)
+                run.font.bold = (comp['type'] == 'title')
+                run.font.color.rgb = rgb
+
+                for line in lines[1:]:
+                    p = tf.add_paragraph()
+                    p.alignment = PP_ALIGN.LEFT
+                    r = p.add_run()
+                    r.text = line
+                    r.font.size = Pt(pt_size)
+                    r.font.bold = (comp['type'] == 'title')
+                    r.font.color.rgb = rgb
+            elif comp['type'] == 'image':
+                if comp.get('image'):
+                    img_path = os.path.join(current_app.root_path, comp['image'].lstrip('/'))
+                    if os.path.exists(img_path):
+                        try:
+                            pptx_slide.shapes.add_picture(img_path, x, y, w, h)
+                        except Exception:
+                            pass
+                else:
+                    from pptx.enum.shapes import MSO_SHAPE
+                    box = pptx_slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y, w, h)
+                    box.fill.solid()
+                    box.fill.fore_color.rgb = RGBColor(0xE0, 0xE0, 0xE0)
+                    box.line.color.rgb = RGBColor(0xAA, 0xAA, 0xAA)
+                    box.line.width = Pt(1)
+                    box.shadow.inherit = False
 
     buf = BytesIO()
     prs.save(buf)
