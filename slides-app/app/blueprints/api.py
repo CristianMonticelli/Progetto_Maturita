@@ -263,9 +263,36 @@ def export_pptx(presentation_id):
                     img_path = os.path.join(current_app.root_path, comp['image'].lstrip('/'))
                     if os.path.exists(img_path):
                         try:
-                            pptx_slide.shapes.add_picture(img_path, x, y, w, h)
+                            from PIL import Image as PILImage
+                            with PILImage.open(img_path) as im:
+                                img_w_px, img_h_px = im.size
+                            img_ratio = img_w_px / img_h_px
+                            box_ratio = w / h
+
+                            if img_ratio > box_ratio:
+                                # image is wider than the box -> fit by width
+                                final_w = w
+                                final_h = int(w / img_ratio)
+                            else:
+                                # image is taller than the box -> fit by height
+                                final_h = h
+                                final_w = int(h * img_ratio)
+
+                            # center the image inside the original box
+                            offset_x = x + (w - final_w) // 2
+                            offset_y = y + (h - final_h) // 2
+
+                            pptx_slide.shapes.add_picture(
+                                img_path, offset_x, offset_y, final_w, final_h
+                            )
                         except Exception:
-                            pass
+                            # Fallback: if Pillow fails for any reason,
+                            # add the picture at its natural size anchored
+                            # to the top-left of the box (still not stretched)
+                            try:
+                                pptx_slide.shapes.add_picture(img_path, x, y, width=w)
+                            except Exception:
+                                pass
                 else:
                     from pptx.enum.shapes import MSO_SHAPE
                     box = pptx_slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y, w, h)
