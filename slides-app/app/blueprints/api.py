@@ -214,6 +214,11 @@ def export_pptx(presentation_id):
                 pass
 
         components = slide_component_repository.get_components_by_slide(slide_data['id'])
+        # Sort by z_index so shapes are added to the slide in the same
+        # visual stacking order as the editor (PowerPoint renders shapes
+        # added later ON TOP of earlier ones, so we must respect z_index
+        # here or images/text can end up covering the title).
+        components = sorted(components, key=lambda c: c.get('z_index') or 0)
         for comp in components:
             x = int(comp['x'] / 100 * W)
             y = int(comp['y'] / 100 * H)
