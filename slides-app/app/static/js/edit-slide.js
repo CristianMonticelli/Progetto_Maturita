@@ -122,6 +122,24 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         el.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#e8e8e8;color:#888;font-size:13px;border-radius:4px;border:2px dashed #bbb;box-sizing:border-box;">📷 ${esc(S.selezionaImmagine || 'Seleziona immagine')}</div>`;
       }
+    } else if (comp.type === 'video') {
+      if (comp.image) {
+        el.innerHTML = `<video src="${comp.image}" style="width:100%;height:100%;object-fit:contain;pointer-events:none;" preload="metadata" muted></video>`;
+      } else if (comp.content && comp.content.startsWith('http')) {
+        let embedUrl = comp.content;
+        if (embedUrl.includes('youtube.com/watch?v=')) {
+          embedUrl = embedUrl.replace('watch?v=', 'embed/');
+        } else if (embedUrl.includes('youtu.be/')) {
+          const id = embedUrl.split('youtu.be/')[1].split('?')[0];
+          embedUrl = `https://www.youtube.com/embed/${id}`;
+        } else if (embedUrl.includes('vimeo.com/')) {
+          const id = embedUrl.split('vimeo.com/')[1];
+          embedUrl = `https://player.vimeo.com/video/${id}`;
+        }
+        el.innerHTML = `<iframe src="${embedUrl}" style="width:100%;height:100%;border:none;pointer-events:none;" allowfullscreen></iframe>`;
+      } else {
+        el.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#111;color:#666;font-size:1.2em;border-radius:6px;border:2px dashed #444;cursor:default;user-select:none;pointer-events:none;">🎬</div>`;
+      }
     } else if (comp.type === 'link') {
       el.innerHTML = `<div style="font-size:${comp.font_size}px;color:${comp.color};text-decoration:underline;line-height:1.4;width:100%;height:100%;overflow:hidden;white-space:nowrap;">${esc(comp.content || 'https://...')}</div>`;
     }
@@ -256,16 +274,22 @@ document.addEventListener('DOMContentLoaded', () => {
     propsEmpty.style.display = 'none';
     propsBody.style.display  = 'flex';
 
-    const names = { title:'Titolo', text:'Testo', image:'Immagine', link:'Link' };
+    const names = { title:'Titolo', text:'Testo', image:'Immagine', link:'Link', video:'Video' };
     propTypeLabel.textContent = names[comp.type] || comp.type;
 
     const isImg = comp.type === 'image';
-    prContent.style.display  = isImg ? 'none' : 'flex';
-    prImage.style.display    = isImg ? 'flex' : 'none';
-    prFontsize.style.display = isImg ? 'none' : 'flex';
-    prColor.style.display    = isImg ? 'none' : 'flex';
+    const isVid = comp.type === 'video';
+    const isMedia = isImg || isVid;
 
-    if (!isImg) {
+    prContent.style.display  = isMedia ? 'none' : 'flex';
+    prImage.style.display    = isImg   ? 'flex' : 'none';
+    prFontsize.style.display = isMedia ? 'none' : 'flex';
+    prColor.style.display    = isMedia ? 'none' : 'flex';
+
+    const prVideo = document.getElementById('pr-video');
+    if (prVideo) prVideo.style.display = isVid ? 'block' : 'none';
+
+    if (!isMedia) {
       propContent.value     = comp.content || '';
       propFs.value          = comp.font_size || 24;
       propFsVal.textContent = comp.font_size || 24;
@@ -276,6 +300,17 @@ document.addEventListener('DOMContentLoaded', () => {
       propImgPrev.innerHTML = `<img src="${comp.image}" style="max-width:100%;max-height:70px;border-radius:4px;">`;
     } else {
       propImgPrev.innerHTML = '';
+    }
+
+    if (isVid) {
+      const propVidPrev = document.getElementById('prop-video-prev');
+      const propVidUrl  = document.getElementById('prop-vid-url');
+      if (propVidPrev) {
+        propVidPrev.innerHTML = comp.image
+          ? `<video src="${comp.image}" style="max-width:100%;max-height:70px;border-radius:4px;" controls></video>`
+          : '';
+      }
+      if (propVidUrl) propVidUrl.value = comp.content || '';
     }
 
     const isTransp = !comp.bg_color || comp.bg_color === 'transparent';
@@ -355,6 +390,31 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch { showToast(S.erroreCaricamento || 'Errore caricamento immagine', true); }
   });
 
+  document.getElementById('prop-vid-file').addEventListener('change', async () => {
+    const comp = getComp(selectedId);
+    if (!comp || comp.type !== 'video') return;
+    const file = document.getElementById('prop-vid-file').files[0];
+    if (!file) return;
+    const fd = new FormData();
+    fd.append('video', file);
+    try {
+      const res = await apiFetch(`/api/slides/${slideId}/upload_video`, { method: 'POST', body: fd });
+      comp.image   = res.path;
+      comp.content = '';
+      renderAll();
+      updateProps();
+    } catch { showToast(S.erroreCaricamento || 'Errore caricamento video', true); }
+  });
+
+  document.getElementById('prop-vid-url').addEventListener('change', () => {
+    const comp = getComp(selectedId);
+    if (!comp || comp.type !== 'video') return;
+    comp.content = document.getElementById('prop-vid-url').value.trim();
+    comp.image   = null;
+    renderAll();
+    updateProps();
+  });
+
   document.getElementById('bg-input').addEventListener('input', e => {
     canvas.style.background = e.target.value;
   });
@@ -368,6 +428,7 @@ document.addEventListener('DOMContentLoaded', () => {
     title: { content:'Titolo', x:5,  y:5,  width:90, height:18, font_size:48, color:'#ff6600', bg_color:'transparent', image:null },
     text:  { content:'Testo',  x:5,  y:28, width:60, height:40, font_size:22, color:'#333333', bg_color:'transparent', image:null },
     image: { content:'',       x:63, y:5,  width:32, height:60, font_size:0,  color:'#000000', bg_color:'transparent', image:null },
+    video: { content:'',       x:10, y:10, width:60, height:50, font_size:0,  color:'#000000', bg_color:'transparent', image:null },
     link:  { content:'https://esempio.com', x:5, y:75, width:50, height:10, font_size:18, color:'#0066cc', bg_color:'transparent', image:null },
   };
 
